@@ -2,8 +2,6 @@ import streamlit as st
 import random
 import pandas as pd
 from datetime import datetime
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
 
 # 1. Konfigurasi Halaman Browser
@@ -117,7 +115,6 @@ def muat_data():
     if os.path.exists(DATA_FILE):
         df = pd.read_csv(DATA_FILE)
         
-        # Penyesuaian otomatis jika file CSV lama masih menggunakan kolom gabungan
         if "Waktu Presensi" in df.columns:
             df = df.drop(columns=["Waktu Presensi"])
         if "Tanggal Presensi" not in df.columns:
@@ -216,7 +213,6 @@ with kolom_absen:
             st.session_state.nama_aktif = "-- Pilih Nama --"
             st.session_state.kelas_lama = kelas
         
-        # Ambil daftar nama ter-filter berdasarkan kelas
         df_kelas = st.session_state.df_master[st.session_state.df_master["Kelas"] == kelas]
         daftar_nama_asli = sorted(df_kelas["Nama Siswa"].tolist())
         
@@ -263,7 +259,7 @@ with kolom_absen:
                     
                     st.session_state.df_master.loc[idx_anak, "Status"] = "✅ Hadir"
                     st.session_state.df_master.loc[idx_anak, "Tanggal Presensi"] = sekarang.strftime("%d-%m-%Y")
-                    st.session_state.df_master.loc[idx_anak, "Jam Presensi"] = sekarang.strftime("%H:%M:%S")
+                    st.session_state.df_master.loc[idx_anak, "Jam Presensi"] =開いた時間.strftime("%H:%M:%S")
                     st.session_state.df_master.loc[idx_anak, "Total Hadir Sesi"] += 1
                     
                     simpan_data(st.session_state.df_master)
@@ -332,7 +328,7 @@ st.write("<br><br>", unsafe_allow_html=True)
 # ==================== COMPONENT UTAMA: LOG & GRAFIK LAPORAN AKHIR ====================
 st.write("---")
 with st.container(border=True):
-    st.markdown("<h2 style='color:#1E3A8A; margin-top:0;'>📊 Papan Prestasi & Laporan Kehadiran Kelas</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#1E3A8A; margin-top:0;'>📊 Papan Analisis & Laporan Kelas Modern</h2>", unsafe_allow_html=True)
     
     total_siswa = len(st.session_state.df_master)
     total_hadir = len(st.session_state.df_master[st.session_state.df_master["Status"] == "✅ Hadir"])
@@ -348,81 +344,54 @@ with st.container(border=True):
 
     st.write("<br>", unsafe_allow_html=True)
     
-    pilih_log_kelas = st.radio("Pilih kelas yang ingin dilihat laporannya:", ["Semua Kelas", "KB", "TK A", "TK B"], horizontal=True, key="filter_laporan")
+    pilih_log_kelas = st.radio("Pilih filter laporan kelompok kelas:", ["Semua Kelas", "KB", "TK A", "TK B"], horizontal=True, key="filter_laporan")
     df_filtered = st.session_state.df_master if pilih_log_kelas == "Semua Kelas" else st.session_state.df_master[st.session_state.df_master["Kelas"] == pilih_log_kelas]
 
-    # --- MENU TAB GRAFIK ---
-    tab_bintang, tab_kehadiran_anak = st.tabs(["🌈 Papan Bintang Ceria", "📈 Grafik Kehadiran Mandiri per Anak"])
+    # --- MENU PANEL GRAFIK EXECUTIVE DESIGN ---
+    tab_combo, tab_audit_tabel = st.tabs(["📉 Line & Area Combo Dashboard", "📋 Tabel Log Audit Resmi"])
     
-    with tab_bintang:
-        if not df_filtered.empty and df_filtered["Bintang"].sum() > 0:
-            fig, ax = plt.subplots(figsize=(10, 4))
-            fig.patch.set_facecolor('#F8FAFC')
-            ax.set_facecolor('#FFFFFF')
+    with tab_combo:
+        if not df_filtered.empty and (df_filtered["Bintang"].sum() > 0 or df_filtered["Total Hadir Sesi"].sum() > 0):
+            st.markdown("### 💠 Tren Prestasi & Akumulasi Kehadiran Siswa")
             
-            warna_warni = sns.color_palette("pastel", len(df_filtered))
-            bars = ax.bar(df_filtered["Nama Siswa"], df_filtered["Bintang"], color=warna_warni, edgecolor='#E2E8F0', width=0.55)
+            # Mempersiapkan DataFrame bersih khusus untuk grafik combo Streamlit
+            df_chart = df_filtered.copy()
+            df_chart = df_chart.set_index("Nama Siswa")
             
-            for bar in bars:
-                tinggi = bar.get_height()
-                ax.text(bar.get_x() + bar.get_width()/2., tinggi + 0.1, f'{int(tinggi)}', ha='center', va='bottom', fontsize=10, fontweight='bold', color='#1E3A8A')
-                ax.text(bar.get_x() + bar.get_width()/2., tinggi + 0.01, '⭐', ha='center', va='center', fontsize=12)
-                
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            ax.tick_params(axis='x', rotation=30, labelsize=9)
-            ax.set_ylabel("Jumlah Bintang", fontsize=9, fontweight='bold')
-            st.pyplot(fig)
+            # Ganti nama kolom untuk legenda visual agar profesional
+            df_chart = df_chart.rename(columns={
+                "Bintang": "Perolehan Bintang (⭐)",
+                "Total Hadir Sesi": "Total Kehadiran Sesi (Hari)"
+            })
+            
+            # Menggunakan Combo Streamlit Chart Native (Line & Area Overlay yang ter-anti-alias otomatis)
+            st.area_chart(
+                df_chart[["Perolehan Bintang (⭐)", "Total Kehadiran Sesi (Hari)"]],
+                color=["#6366F1", "#10B981"], # Indigo & Emerald Pastel Premium
+                use_container_width=True
+            )
+            
+            st.caption("💡 *Grafik di atas memadukan data akumulasi bintang siswa (Area Indigo) dengan total rekam hari presensi kehadiran (Garis Emerald) secara real-time.*")
         else:
-            st.info("ℹ️ Belum ada perolehan bintang untuk divisualisasikan pada kelompok kelas ini.")
+            st.info("ℹ️ Belum ada perolehan performa data untuk dirender ke dalam Line Combo Chart.")
 
-    with tab_kehadiran_anak:
-        st.markdown("### Lacak Grafik Total Masuk Kelas")
-        daftar_anak_pilihan = sorted(df_filtered["Nama Siswa"].tolist())
+    with tab_audit_tabel:
+        st.markdown("### 📋 Riwayat Log Sistem Terbuka")
+        df_tampilan_tabel = df_filtered.copy()
+        df_tampilan_tabel["Bintang"] = df_tampilan_tabel["Bintang"].apply(lambda x: f"{x} ⭐")
+        df_tampilan_tabel["Total Hadir Sesi"] = df_tampilan_tabel["Total Hadir Sesi"].apply(lambda x: f"{x} Hari")
         
-        if daftar_anak_pilihan:
-            anak_dipilih = st.selectbox("Pilih nama anak untuk melihat grafik tren absensinya:", daftar_anak_pilihan)
-            row_grafik_anak = df_filtered[df_filtered["Nama Siswa"] == anak_dipilih].iloc[0]
-            
-            total_hadir_anak = row_grafik_anak["Total Hadir Sesi"]
-            
-            fig_kh, ax_kh = plt.subplots(figsize=(8, 2))
-            fig_kh.patch.set_facecolor('#F8FAFC')
-            ax_kh.set_facecolor('#FFFFFF')
-            
-            ax_kh.barh(["Total Hari Hadir"], [total_hadir_anak], color="#10B981", height=0.4, edgecolor="#065F46", linewidth=1.5)
-            ax_kh.text(total_hadir_anak + 0.1, 0, f" {total_hadir_anak} Hari Masuk Sekolah 🎉", va='center', ha='left', fontsize=12, fontweight='bold', color='#065F46')
-            
-            ax_kh.spines['top'].set_visible(False)
-            ax_kh.spines['right'].set_visible(False)
-            ax_kh.spines['left'].set_visible(False)
-            ax_kh.set_xlim(0, max(total_hadir_anak + 3, 10))
-            ax_kh.set_xlabel("Akumulasi Hari Masuk Kelas (Sesi)", fontsize=9, fontweight='bold', color='#64748B')
-            
-            st.pyplot(fig_kh)
-        else:
-            st.info("ℹ️ Pilih kategori kelas terlebih dahulu untuk melihat grafik data anak.")
-
-    st.write("<br>", unsafe_allow_html=True)
-    
-    # --- TABLE DATA AUDIT TERBARU ---
-    st.markdown("### 📋 Tabel Log Audit Absensi Resmi")
-    df_tampilan_tabel = df_filtered.copy()
-    df_tampilan_tabel["Bintang"] = df_tampilan_tabel["Bintang"].apply(lambda x: f"{x} ⭐")
-    df_tampilan_tabel["Total Hadir Sesi"] = df_tampilan_tabel["Total Hadir Sesi"].apply(lambda x: f"{x} Hari")
-    
-    st.dataframe(
-        df_tampilan_tabel[["Kelas", "Nama Siswa", "Status", "Tanggal Presensi", "Jam Presensi", "Bintang", "Total Hadir Sesi"]], 
-        use_container_width=True, 
-        hide_index=True
-    )
+        st.dataframe(
+            df_tampilan_tabel[["Kelas", "Nama Siswa", "Status", "Tanggal Presensi", "Jam Presensi", "Bintang", "Total Hadir Sesi"]], 
+            use_container_width=True, 
+            hide_index=True
+        )
 
     # --- FITUR ADMIN GURU (DENGAN TOMBOL RESET DATABASE TOTAL) ---
     st.write("---")
     with st.expander("⚙️ Menu Admin Guru (Ms. Siska)"):
         st.markdown("### 🔄 Kontrol Sembuh & Siklus Sesi")
         
-        # Opsi 1: Hanya Reset Kehadiran Harian (Bintang & Total Hadir Tetap Aman)
         if st.button("🔄 Mulai Sesi Hari Baru (Reset Status Harian Saja)"):
             st.session_state.df_master["Status"] = "❌ Belum Absen"
             st.session_state.df_master["Tanggal Presensi"] = "-"
@@ -434,16 +403,13 @@ with st.container(border=True):
         st.write("<br>", unsafe_allow_html=True)
         st.write("---")
         
-        # Opsi 2: RESET TOTAL UTUH (Tombol Baru Sesuai Permintaan)
         st.markdown("### ⚠️ Area Bahaya (Reset Pabrik)")
         st.error("Perhatian: Tombol di bawah ini akan menghapus semua riwayat secara PERMANEN. Bintang dan total hari masuk seluruh siswa akan kembali menjadi 0.")
         
-        # Konfirmasi Keamanan Tambahan lewat Checkbox agar tidak sengaja terpencet
         konfirmasi_reset = st.checkbox("Saya benar-benar ingin mengosongkan seluruh database (Bintang & Absen kembali ke 0)")
         
         if st.button("🚨 RESET TOTAL DATA DATABASE (Kembali ke Nol)", type="secondary"):
             if konfirmasi_reset:
-                # Memanggil fungsi pembuat data awal dari nol dan menimpa file CSV lama
                 st.session_state.df_master = buat_database_baru()
                 st.session_state.nama_aktif = "-- Pilih Nama --"
                 st.session_state.game_aktif = None
