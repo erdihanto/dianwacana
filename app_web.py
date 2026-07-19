@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
 
 # 1. Konfigurasi Halaman Browser
 st.set_page_config(page_title="Dashboard Absensi Dian Wacana", page_icon="📊", layout="wide")
@@ -11,13 +12,10 @@ st.set_page_config(page_title="Dashboard Absensi Dian Wacana", page_icon="📊",
 # 2. SUNTIKAN CSS UNTUK STYLE PREMIUM & PROFESIONAL
 st.markdown("""
     <style>
-    /* Mengubah background utama aplikasi agar bersih dan soft */
     .stApp {
         background-color: #F8FAFC;
         color: #0F172A;
     }
-    
-    /* Desain Header Utama ala Dashboard Premium */
     .header-kontainer {
         text-align: center;
         background-color: #FFFFFF;
@@ -27,7 +25,6 @@ st.markdown("""
         margin-bottom: 30px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
-    
     .judul-utama {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         color: #1E3A8A;
@@ -47,8 +44,6 @@ st.markdown("""
         font-size: 15px;
         margin-top: 4px;
     }
-
-    /* Memaksa bingkai internal Streamlit st.container(border=True) agar terlihat tegas dan rapi */
     .stElementContainer div[data-testid="stVerticalBlockBorderContainer"] {
         background-color: #FFFFFF !important;
         border: 1px solid #E2E8F0 !important;
@@ -56,8 +51,6 @@ st.markdown("""
         padding: 25px !important;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
     }
-    
-    /* Efek visual kotak soal game di dalam frame */
     .kotak-soal {
         text-align: center; 
         font-size: 60px; 
@@ -67,8 +60,6 @@ st.markdown("""
         padding: 15px; 
         margin-bottom: 15px;
     }
-    
-    /* Desain Tombol agar seragam dan flat rapi */
     .stButton>button {
         border-radius: 8px !important;
         font-weight: 600 !important;
@@ -83,8 +74,6 @@ st.markdown("""
         color: #3B82F6 !important;
         background-color: #EFF6FF !important;
     }
-    
-    /* Kartu Metrik Kustom Profesional */
     .metric-card {
         background-color: #F1F5F9;
         border-radius: 12px;
@@ -95,19 +84,43 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- DATABASE STATE ---
-if 'database_siswa' not in st.session_state:
-    st.session_state.database_siswa = {
-       "KB": {"Adit": 0, "Amari": 0, "Levin": 0, "Sienny": 0, "Jesselyn": 0, "Kenzou": 0, "Ralf": 0},
-        "TK A": {"Kenzie": 0, "Brigitta": 0, "Essy": 0, "Felicia": 0, "Geva": 0, "Greesa": 0, "Laras": 0, "Liam": 0},
-        "TK B": {"Aileen": 0, "Agatha": 0, "Daniel": 0, "Sean": 0, "Elvano": 0, "Betha": 0, "Hiro": 0}
-    }
+# --- KONFIGURASI FILE PENYIMPANAN DATA (DATABASE CSV) ---
+DATA_FILE = "database_absensi_dian_wacana.csv"
 
-if 'status_hadir' not in st.session_state:
-    st.session_state.status_hadir = {kelas: {nama: False for nama in siswa} for kelas, siswa in st.session_state.database_siswa.items()}
+# Daftar Master Siswa Tetap
+MASTER_SISWA = {
+    "KB": ["Adit", "Amari", "Levin", "Sienny", "Jesselyn", "Kenzou", "Ralf"],
+    "TK A": ["Kenzie", "Brigitta", "Essy", "Felicia", "Geva", "Greesa", "Laras", "Liam"],
+    "TK B": ["Aileen", "Agatha", "Daniel", "Sean", "Elvano", "Betha", "Hiro"]
+}
 
-if 'waktu_hadir' not in st.session_state:
-    st.session_state.waktu_hadir = {kelas: {nama: "-" for nama in siswa} for kelas, siswa in st.session_state.database_siswa.items()}
+# Fungsi Memuat Data dari CSV (Jika file belum ada, otomatis membuat baru dengan bintang 0)
+def muat_data():
+    if os.path.exists(DATA_FILE):
+        return pd.read_csv(DATA_FILE)
+    else:
+        # Generate basis data awal jika file kosong
+        rows = []
+        for kelas, daftar_nama in MASTER_SISWA.items():
+            for nama in daftar_nama:
+                rows.append({
+                    "Kelas": kelas,
+                    "Nama Siswa": nama,
+                    "Status": "❌ Belum Absen",
+                    "Waktu Presensi": "-",
+                    "Bintang": 0
+                })
+        df_awal = pd.DataFrame(rows)
+        df_awal.to_csv(DATA_FILE, index=False)
+        return df_awal
+
+# Fungsi Menyimpan Perubahan Data Kembali ke CSV
+def simpan_data(df):
+    df.to_csv(DATA_FILE, index=False)
+
+# Memuat data secara persisten ke dalam session_state agar sinkron dengan Streamlit
+if 'df_master' not in st.session_state:
+    st.session_state.df_master = muat_data()
 
 if 'nama_aktif' not in st.session_state:
     st.session_state.nama_aktif = "-- Pilih Nama --"
@@ -186,14 +199,17 @@ with kolom_absen:
             st.session_state.nama_aktif = "-- Pilih Nama --"
             st.session_state.kelas_lama = kelas
         
-        daftar_nama_asli = sorted(list(st.session_state.database_siswa[kelas].keys()))
+        # Ambil daftar nama ter-filter berdasarkan kelas
+        df_kelas = st.session_state.df_master[st.session_state.df_master["Kelas"] == kelas]
+        daftar_nama_asli = sorted(df_kelas["Nama Siswa"].tolist())
         
         opsi_selectbox = ["-- Pilih Nama --"]
         mapping_nama = {"-- Pilih Nama --": "-- Pilih Nama --"}
         indeks_default = 0
         
         for i, nama in enumerate(daftar_nama_asli):
-            if st.session_state.status_hadir[kelas][nama]:
+            status_siswa = df_kelas[df_kelas["Nama Siswa"] == nama]["Status"].values[0]
+            if "✅" in status_siswa:
                 label_tampilan = f"✅ {nama} (Sudah Hadir)"
             else:
                 label_tampilan = nama
@@ -211,19 +227,28 @@ with kolom_absen:
         st.write("---")
         
         if nama_terpilled != "-- Pilih Nama --":
-            hadir = st.session_state.status_hadir[kelas][nama_terpilled]
-            bintang = st.session_state.database_siswa[kelas][nama_terpilled]
-            waktu = st.session_state.waktu_hadir[kelas][nama_terpilled]
+            # Ambil record data spesifik anak tersebut dari DataFrame
+            idx_anak = st.session_state.df_master[(st.session_state.df_master["Kelas"] == kelas) & (st.session_state.df_master["Nama Siswa"] == nama_terpilled)].index[0]
+            row_anak = st.session_state.df_master.loc[idx_anak]
+            
+            hadir = "✅" in row_anak["Status"]
+            bintang = row_anak["Bintang"]
+            waktu = row_anak["Waktu Presensi"]
             
             if hadir:
                 st.markdown("<h1 style='text-align: center; margin:0;'>🥰</h1>", unsafe_allow_html=True)
-                st.success(f"Selamat Datang, {nama_terpilled}! Kamu sudah absen pada {waktu}. Bintangmu: {bintang} ⭐")
+                st.success(f"Selamat Datang, {nama_terpilled}! Kamu sudah absen pada {waktu}. Bintangmu saat ini: {bintang} ⭐")
             else:
                 st.markdown("<h1 style='text-align: center; margin:0;'>😊</h1>", unsafe_allow_html=True)
                 st.warning(f"Halo {nama_terpilled}, kamu belum mengonfirmasi kehadiran.")
                 if st.button("✋ SAYA HADIR HARI INI!", type="primary"):
-                    st.session_state.status_hadir[kelas][nama_terpilled] = True
-                    st.session_state.waktu_hadir[kelas][nama_terpilled] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                    # Perbarui data ke DataFrame memori
+                    st.session_state.df_master.loc[idx_anak, "Status"] = "✅ Hadir"
+                    st.session_state.df_master.loc[idx_anak, "Waktu Presensi"] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                    
+                    # SIMPAN PERMANEN KE CSV
+                    simpan_data(st.session_state.df_master)
+                    
                     st.session_state.game_aktif = get_game(kelas)
                     st.session_state.umpan_balik_game = None
                     st.rerun()
@@ -236,10 +261,12 @@ with kolom_game:
     with st.container(border=True):
         st.subheader("🎮 Bingkai Tantangan Game")
         
-        if nama_terpilled == "-- Pilih Nama --" or not st.session_state.status_hadir[kelas][nama_terpilled]:
+        if nama_terpilled == "-- Pilih Nama --" or not ("✅" in st.session_state.df_master[(st.session_state.df_master["Kelas"] == kelas) & (st.session_state.df_master["Nama Siswa"] == nama_terpilled)]["Status"].values[0]):
             st.markdown("<h1 style='text-align: center; margin: 30px 0;'>🔒</h1>", unsafe_allow_html=True)
             st.info("Game Terkunci. Silakan lakukan **Absen Hadir** di frame sebelah kiri untuk membukanya!")
         else:
+            idx_anak = st.session_state.df_master[(st.session_state.df_master["Kelas"] == kelas) & (st.session_state.df_master["Nama Siswa"] == nama_terpilled)].index[0]
+            
             if st.session_state.umpan_balik_game == "benar":
                 st.balloons()
                 st.markdown("<h3 style='text-align: center; color: #10B981;'>🏆 JAWABAN BENAR! +1 ⭐</h3>", unsafe_allow_html=True)
@@ -268,7 +295,12 @@ with kolom_game:
                         with kol_opsi[i]:
                             if st.button(alternatif, key=f"btn_{alternatif}_{i}"):
                                 if alternatif == jawaban_benar:
-                                    st.session_state.database_siswa[kelas][nama_terpilled] += 1
+                                    # Tambah skor bintang di memori
+                                    st.session_state.df_master.loc[idx_anak, "Bintang"] += 1
+                                    
+                                    # SIMPAN PERMANEN KE CSV
+                                    simpan_data(st.session_state.df_master)
+                                    
                                     st.session_state.umpan_balik_game = "benar"
                                     st.rerun()
                                 else:
@@ -287,30 +319,9 @@ st.write("---")
 with st.container(border=True):
     st.markdown("<h2 style='color:#1E3A8A; margin-top:0;'>📊 Papan Prestasi & Laporan Kehadiran Kelas</h2>", unsafe_allow_html=True)
     
-    # Pemrosesan Data Master untuk Laporan
-    data_rekap = []
-    total_siswa = 0
-    total_hadir = 0
-    
-    for klis, daftar_anak in st.session_state.database_siswa.items():
-        for nama_anak, skor_bintang in daftar_anak.items():
-            total_siswa += 1
-            apakah_hadir = st.session_state.status_hadir[klis][nama_anak]
-            if apakah_hadir:
-                total_hadir += 1
-                
-            status_emoji = "✅ Hadir" if apakah_hadir else "❌ Belum Absen"
-            catatan_waktu = st.session_state.waktu_hadir[klis][nama_anak]
-            
-            data_rekap.append({
-                "Kelas": klis,
-                "Nama Siswa": nama_anak,
-                "Status": status_emoji,
-                "Waktu Presensi": catatan_waktu,
-                "Bintang": skor_bintang
-            })
-            
-    df = pd.DataFrame(data_rekap)
+    # Hitung KPI Statistik secara berkala berdasarkan isi DataFrame master saat ini
+    total_siswa = len(st.session_state.df_master)
+    total_hadir = len(st.session_state.df_master[st.session_state.df_master["Status"] == "✅ Hadir"])
     
     # --- SECTION A: RINGKASAN METRIK ---
     col_m1, col_m2, col_m3 = st.columns(3)
@@ -331,48 +342,34 @@ with st.container(border=True):
     pilih_log_kelas = st.radio("Pilih kelas yang ingin dilihat papan bintangnya:", ["Semua Kelas", "KB", "TK A", "TK B"], horizontal=True, key="filter_laporan")
     
     if pilih_log_kelas != "Semua Kelas":
-        df_filtered = df[df["Kelas"] == pilih_log_kelas]
+        df_filtered = st.session_state.df_master[st.session_state.df_master["Kelas"] == pilih_log_kelas]
     else:
-        df_filtered = df
+        df_filtered = st.session_state.df_master
 
     # Papan grafik kustom bertema anak-anak
     if not df_filtered.empty and df_filtered["Bintang"].sum() > 0:
-        # Mengatur konfigurasi gaya grafik Matplotlib
         fig, ax = plt.subplots(figsize=(10, 4.5))
-        fig.patch.set_facecolor('#F8FAFC')  # Menyamakan dengan warna dasar aplikasi
+        fig.patch.set_facecolor('#F8FAFC')
         ax.set_facecolor('#FFFFFF')
         
-        # Menggunakan palet warna pastel pelangi ceria
         warna_warni = sns.color_palette("pastel", len(df_filtered))
-        
-        # Membuat bar chart
         bars = ax.bar(df_filtered["Nama Siswa"], df_filtered["Bintang"], color=warna_warni, edgecolor='#E2E8F0', width=0.6, linewidth=1.5)
         
-        # Menambahkan dekorasi angka bintang di atas setiap bar
         for bar in bars:
             tinggi = bar.get_height()
-            # Tulis angka bintang
-            ax.text(bar.get_x() + bar.get_width()/2., tinggi + 0.2, f'{int(tinggi)}',
-                    ha='center', va='bottom', fontsize=12, fontweight='bold', color='#1E3A8A')
-            # Gambar Ikon Bintang Lucu di ujung atas bar
-            ax.text(bar.get_x() + bar.get_width()/2., tinggi + 0.02, '⭐',
-                    ha='center', va='center', fontsize=15)
+            ax.text(bar.get_x() + bar.get_width()/2., tinggi + 0.2, f'{int(tinggi)}', ha='center', va='bottom', fontsize=12, fontweight='bold', color='#1E3A8A')
+            ax.text(bar.get_x() + bar.get_width()/2., tinggi + 0.02, '⭐', ha='center', va='center', fontsize=15)
             
-        # Merapikan batas garis diagram (Menghilangkan box kaku)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.spines['left'].set_color('#CBD5E1')
         ax.spines['bottom'].set_color('#CBD5E1')
         
-        # Pengaturan label teks sumbu
         ax.tick_params(axis='x', rotation=30, labelsize=10, colors='#334155')
         ax.tick_params(axis='y', labelsize=9, colors='#64748B')
         ax.set_ylabel("Jumlah Bintang", fontsize=10, fontweight='bold', color='#64748B')
-        
-        # Menyesuaikan batas atas sumbu Y agar teks angka tidak terpotong
         ax.set_ylim(0, df_filtered["Bintang"].max() + 1)
         
-        # Tampilkan ke Streamlit secara rapi
         st.pyplot(fig)
     else:
         st.info("ℹ️ Belum ada perolehan bintang untuk divisualisasikan pada kelompok kelas ini.")
@@ -390,3 +387,14 @@ with st.container(border=True):
         use_container_width=True, 
         hide_index=True
     )
+
+    # --- FITUR TAMBAHAN GURU: TOMBOL RESET (UNTUK HARI BARU) ---
+    st.write("---")
+    with st.expander("⚙️ Menu Admin Guru (Ms. Siska)"):
+        st.warning("Tombol di bawah ini akan menghapus status kehadiran hari ini namun TETAP MEMPERTAHANKAN akumulasi bintang anak-anak untuk hari berikutnya.")
+        if st.button("🔄 Mulai Sesi Hari Baru (Reset Absensi Saja)"):
+            st.session_state.df_master["Status"] = "❌ Belum Absen"
+            st.session_state.df_master["Waktu Presensi"] = "-"
+            simpan_data(st.session_state.df_master)
+            st.success("Sesi absensi berhasil di-reset untuk hari baru! Bintang anak-anak tetap aman terakumulasi.")
+            st.rerun()
