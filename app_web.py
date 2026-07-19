@@ -1,10 +1,11 @@
 import streamlit as st
 import random
+import pandas as pd
 
 # 1. Konfigurasi Halaman Browser
 st.set_page_config(page_title="Absensi Ceria & Coding", page_icon="🎨", layout="wide")
 
-# 2. SUNTIKAN CSS UNTUK MENIRU STYLE APLIKASI WEB CLEAN FRAME
+# 2. SUNTIKAN CSS UNTUK STYLE APLIKASI WEB CLEAN FRAME
 st.markdown("""
     <style>
     /* Mengubah background utama aplikasi agar bersih dan soft */
@@ -156,7 +157,6 @@ kolom_absen, kolom_game = st.columns(2, gap="large")
 
 # ==================== FRAME 1: PANEL ABSENSI (KIRI) ====================
 with kolom_absen:
-    # Menggunakan border=True agar terkurung rapi di dalam bingkai tanpa celah
     with st.container(border=True):
         st.subheader("📋 Bingkai Absensi Siswa")
         
@@ -187,7 +187,6 @@ with kolom_absen:
 
 # ==================== FRAME 2: PANEL GAME (KANAN) ====================
 with kolom_game:
-    # Menggunakan border=True agar terkurung rapi di dalam bingkai tanpa celah
     with st.container(border=True):
         st.subheader("🎮 Bingkai Tantangan Game")
         
@@ -215,11 +214,9 @@ with kolom_game:
                 if st.session_state.game_aktif:
                     visual, pertanyaan, opsi, jawaban_benar = st.session_state.game_aktif
                     
-                    # Kotak abu-abu di dalam bingkai game untuk menaruh soal gambar/emoji
                     st.markdown(f'<div class="kotak-soal">{visual}</div>', unsafe_allow_html=True)
                     st.markdown(f'<p style="text-align:center; font-weight:600;">{pertanyaan}</p>', unsafe_allow_html=True)
                     
-                    # Pilihan jawaban tombol horizontal yang rigid
                     kol_opsi = st.columns(len(opsi))
                     for i, alternatif in enumerate(opsi):
                         with kol_opsi[i]:
@@ -236,3 +233,38 @@ with kolom_game:
                         st.session_state.game_aktif = get_game(kelas)
                         st.session_state.umpan_balik_game = None
                         st.rerun()
+
+st.write("<br>", unsafe_allow_html=True)
+
+# ==================== FRAME 3: LOG & REKAPITULASI ABSENSI (BAWAH) ====================
+# Membuat bingkai penuh di bagian paling bawah
+with st.container(border=True):
+    st.subheader("📊 Log & Hasil Absensi Real-Time")
+    
+    # Filter Tampilan Log per Kelas
+    pilih_log_kelas = st.radio("Tampilkan data kelas:", ["Semua Kelas", "KB", "TK A", "TK B"], horizontal=True)
+    
+    # Memproses data session state menjadi bentuk List Objek agar bisa dimasukkan ke Tabel Dataframe
+    data_rekap = []
+    for klis, daftar_anak in st.session_state.database_siswa.items():
+        if pilih_log_kelas == "Semua Kelas" or pilih_log_kelas == klis:
+            for nama_anak, skor_bintang in daftar_anak.items():
+                apakah_hadir = st.session_state.status_hadir[klis][nama_anak]
+                status_emoji = "✅ Hadir" if apakah_hadir else "❌ Belum Absen"
+                
+                data_rekap.append({
+                    "Kelas": klis,
+                    "Nama Siswa": nama_anak,
+                    "Status Kehadiran": status_emoji,
+                    "Bintang Didapat": f"{skor_bintang} ⭐"
+                })
+                
+    # Konversi data ke format Pandas DataFrame agar terkunci di dalam komponen tabel data browser
+    df = pd.DataFrame(data_rekap)
+    
+    # Menampilkan tabel interaktif yang rapi di dalam frame
+    st.dataframe(
+        df, 
+        use_container_width=True, 
+        hide_index=True
+    )
