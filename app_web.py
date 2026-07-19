@@ -80,13 +80,6 @@ st.markdown("""
         text-align: center;
         border: 1px solid #E2E8F0;
     }
-    .ai-box {
-        background-color: #F0FDF4;
-        border-left: 5px solid #16A34A;
-        padding: 15px;
-        border-radius: 8px;
-        margin-top: 10px;
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -418,49 +411,6 @@ with st.container(border=True):
         use_container_width=True, 
         hide_index=True
     )
-
-    # --- NEW COMPONENT: TOMBOL SARAN AI DINAMIS & UPDATE ---
-    st.write("---")
-    st.markdown("### 🤖 Fitur AI Ms. Siska: Asisten Saran & Insight Kelas")
-    st.caption("AI menganalisis data kehadiran secara langsung berdasarkan log siswa yang aktif di atas.")
-    
-    if st.button("✨ MINTA REKOMENDASI & SARAN AI HARI INI", type="primary"):
-        # Analisis 1: Mencari anak yang hari ini Belum Datang/Absen
-        anak_belum_hadir = df_filtered[~df_filtered["Status"].str.contains("✅", na=False)]["Nama Siswa"].tolist()
-        
-        # Analisis 2: Mencari anak yang sering tidak hadir (Total Hadir Sesi paling rendah, tapi minimal database sudah berjalan beberapa sesi)
-        # Kita ambil ambang batas: anak-anak dengan Total Hadir Sesi di bawah rata-rata kelasnya
-        mean_hadir = df_filtered["Total Hadir Sesi"].mean() if len(df_filtered) > 0 else 0
-        anak_jarang_hadir_df = df_filtered[df_filtered["Total Hadir Sesi"] < mean_hadir]
-        
-        with st.container():
-            st.markdown('<div class="ai-box">', unsafe_allow_html=True)
-            st.markdown("#### 🧠 **Laporan Rekomendasi Pintar AI:**")
-            
-            # Bagian A: Evaluasi Hari ini
-            st.markdown("##### ⏳ **Status Kehadiran Hari ini:**")
-            if anak_belum_hadir:
-                daftar_nama_str = ", ".join(anak_belum_hadir)
-                st.markdown(f"- 📢 **Perlu Diingatkan:** Anak-anak yang belum mengonfirmasi kehadiran hari ini di kelompok **{pilih_log_kelas}** adalah: **{daftar_nama_str}**.")
-                st.markdown("- 💡 *Saran Tindakan:* Ms. Siska dapat mengirimkan pesan sapaan hangat di grup WhatsApp kelas untuk memastikan apakah anak-anak tersebut sedang sakit atau mengalami keterlambatan di jalan.")
-            else:
-                st.markdown("- 🎉 **Luar Biasa!** Semua anak di kelompok filter ini sudah hadir dan mengisi absensi hari ini.")
-
-            st.write("")
-            
-            # Bagian B: Analisis Riwayat Log (Sering Absen/Total Sesi Rendah)
-            st.markdown("##### 📉 **Analisis Log & Konsistensi Jangka Panjang:**")
-            if not anak_jarang_hadir_df.empty and mean_hadir > 0:
-                # Mengurutkan yang paling sedikit hadir
-                anak_jarang_hadir_df = anak_jarang_hadir_df.sort_values(by="Total Hadir Sesi")
-                st.markdown(f"- ⚠️ **Perhatian Khusus:** Berdasarkan riwayat data sesi, beberapa siswa memiliki total kehadiran di bawah rata-rata kelas (`{round(mean_hadir, 1)}` Hari):")
-                for _, row in anak_jarang_hadir_df.iterrows():
-                    st.markdown(f"  * **{row['Nama Siswa']}** (Kelas {row['Kelas']}) — Baru mengikuti `{row['Total Hadir Sesi']}` sesi.")
-                st.markdown("- 💡 *Saran Tindakan AI:* Berikan dorongan atau reward tambahan seperti *'Bintang Selamat Datang'* saat mereka hadir di sesi berikutnya agar memicu semangat belajar anak.")
-            else:
-                st.markdown("- 💎 **Tingkat Konsistensi Stabil:** Seluruh siswa memiliki grafik keaktifan sesi yang merata dan stabil. Pertahankan performa ini!")
-                
-            st.markdown('</div>', unsafe_allow_html=True)
 
     # --- FITUR ADMIN GURU (DENGAN TOMBOL RESET DATABASE TOTAL) ---
     st.write("---")
