@@ -259,7 +259,7 @@ with kolom_absen:
                     
                     st.session_state.df_master.loc[idx_anak, "Status"] = "✅ Hadir"
                     st.session_state.df_master.loc[idx_anak, "Tanggal Presensi"] = sekarang.strftime("%d-%m-%Y")
-                    st.session_state.df_master.loc[idx_anak, "Jam Presensi"] =開いた時間.strftime("%H:%M:%S")
+                    st.session_state.df_master.loc[idx_anak, "Jam Presensi"] = sekarang.strftime("%H:%M:%S")
                     st.session_state.df_master.loc[idx_anak, "Total Hadir Sesi"] += 1
                     
                     simpan_data(st.session_state.df_master)
@@ -354,20 +354,17 @@ with st.container(border=True):
         if not df_filtered.empty and (df_filtered["Bintang"].sum() > 0 or df_filtered["Total Hadir Sesi"].sum() > 0):
             st.markdown("### 💠 Tren Prestasi & Akumulasi Kehadiran Siswa")
             
-            # Mempersiapkan DataFrame bersih khusus untuk grafik combo Streamlit
             df_chart = df_filtered.copy()
             df_chart = df_chart.set_index("Nama Siswa")
             
-            # Ganti nama kolom untuk legenda visual agar profesional
             df_chart = df_chart.rename(columns={
                 "Bintang": "Perolehan Bintang (⭐)",
                 "Total Hadir Sesi": "Total Kehadiran Sesi (Hari)"
             })
             
-            # Menggunakan Combo Streamlit Chart Native (Line & Area Overlay yang ter-anti-alias otomatis)
             st.area_chart(
                 df_chart[["Perolehan Bintang (⭐)", "Total Kehadiran Sesi (Hari)"]],
-                color=["#6366F1", "#10B981"], # Indigo & Emerald Pastel Premium
+                color=["#6366F1", "#10B981"], 
                 use_container_width=True
             )
             
