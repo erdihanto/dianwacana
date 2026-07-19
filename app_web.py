@@ -3,6 +3,7 @@ import random
 import pandas as pd
 from datetime import datetime
 import os
+import plotly.express as px  # Pastikan sudah install plotly (pip install plotly)
 
 # 1. Konfigurasi Halaman Browser
 st.set_page_config(page_title="Dashboard Absensi Dian Wacana", page_icon="📊", layout="wide")
@@ -332,6 +333,7 @@ with st.container(border=True):
     
     total_siswa = len(st.session_state.df_master)
     total_hadir = len(st.session_state.df_master[st.session_state.df_master["Status"] == "✅ Hadir"])
+    total_belum = total_siswa - total_hadir
     
     col_m1, col_m2, col_m3 = st.columns(3)
     with col_m1:
@@ -347,42 +349,70 @@ with st.container(border=True):
     pilih_log_kelas = st.radio("Pilih filter laporan kelompok kelas:", ["Semua Kelas", "KB", "TK A", "TK B"], horizontal=True, key="filter_laporan")
     df_filtered = st.session_state.df_master if pilih_log_kelas == "Semua Kelas" else st.session_state.df_master[st.session_state.df_master["Kelas"] == pilih_log_kelas]
 
-    # --- MENU PANEL GRAFIK EXECUTIVE DESIGN ---
-    tab_combo, tab_audit_tabel = st.tabs(["📉 Line & Area Combo Dashboard", "📋 Tabel Log Audit Resmi"])
+    # --- 1. SEKSI GRAFIK LINGKARAN (PIE CHART) EXECUTIVE DESIGN DENGAN INFO DI KANAN ---
+    st.markdown("### 🎯 Grafik Proporsi Status Kehadiran Siswa")
     
-    with tab_combo:
-        if not df_filtered.empty and (df_filtered["Bintang"].sum() > 0 or df_filtered["Total Hadir Sesi"].sum() > 0):
-            st.markdown("### 💠 Tren Prestasi & Akumulasi Kehadiran Siswa")
-            
-            df_chart = df_filtered.copy()
-            df_chart = df_chart.set_index("Nama Siswa")
-            
-            df_chart = df_chart.rename(columns={
-                "Bintang": "Perolehan Bintang (⭐)",
-                "Total Hadir Sesi": "Total Kehadiran Sesi (Hari)"
+    # Hitung data spesifik filter untuk pie chart harian
+    hadir_filter = len(df_filtered[df_filtered["Status"] == "✅ Hadir"])
+    belum_filter = len(df_filtered) - hadir_filter
+    
+    if len(df_filtered) > 0:
+        # Siapkan layout kolom: Kiri untuk grafik lingkaran, Kanan untuk info detail profesional
+        kol_grafik, kol_info_detail = st.columns([3, 2], gap="large")
+        
+        with kol_grafik:
+            # Membuat Pie Chart menggunakan Plotly Express
+            df_pie = pd.DataFrame({
+                "Status Presensi": ["Sudah Hadir (✅)", "Belum Absen (❌)"],
+                "Jumlah Anak": [hadir_filter, belum_filter]
             })
             
-            st.area_chart(
-                df_chart[["Perolehan Bintang (⭐)", "Total Kehadiran Sesi (Hari)"]],
-                color=["#6366F1", "#10B981"], 
-                use_container_width=True
+            fig = px.pie(
+                df_pie, 
+                values="Jumlah Anak", 
+                names="Status Presensi",
+                color="Status Presensi",
+                color_discrete_map={"Sudah Hadir (✅)": "#10B981", "Belum Absen (❌)": "#EF4444"},
+                hole=0.4  # Model Donut profesional agar elegan
             )
             
-            st.caption("💡 *Grafik di atas memadukan data akumulasi bintang siswa (Area Indigo) dengan total rekam hari presensi kehadiran (Garis Emerald) secara real-time.*")
-        else:
-            st.info("ℹ️ Belum ada perolehan performa data untuk dirender ke dalam Line Combo Chart.")
+            fig.update_layout(
+                margin=dict(t=10, b=10, l=10, r=10),
+                legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.05),
+                showlegend=True
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            
+        with kol_info_detail:
+            st.markdown("#### 📝 Detail Status Eksekutif")
+            persen_hadir = round((hadir_filter / len(df_filtered)) * 100) if len(df_filtered) > 0 else 0
+            persen_belum = 100 - persen_hadir
+            
+            st.markdown(f"""
+            * 🟢 **Sudah Mengonfirmasi Hadir:** `{hadir_filter} Anak` ({persen_hadir}%)
+            * 🔴 **Belum Mengonfirmasi/Absen:** `{belum_filter} Anak` ({persen_belum}%)
+            * 🏢 **Total Kapasitas Kelas Terfilter:** `{len(df_filtered)} Anak`
+            
+            ---
+            💡 *Pemberitahuan: Grafik interaktif ini membantu Ms. Siska memantau rasio kedatangan kelas secara cepat sebelum aktivitas belajar mengajar dimulai.*
+            """)
+    else:
+        st.info("ℹ️ Tidak ada data yang tersedia untuk filter kelas ini.")
 
-    with tab_audit_tabel:
-        st.markdown("### 📋 Riwayat Log Sistem Terbuka")
-        df_tampilan_tabel = df_filtered.copy()
-        df_tampilan_tabel["Bintang"] = df_tampilan_tabel["Bintang"].apply(lambda x: f"{x} ⭐")
-        df_tampilan_tabel["Total Hadir Sesi"] = df_tampilan_tabel["Total Hadir Sesi"].apply(lambda x: f"{x} Hari")
-        
-        st.dataframe(
-            df_tampilan_tabel[["Kelas", "Nama Siswa", "Status", "Tanggal Presensi", "Jam Presensi", "Bintang", "Total Hadir Sesi"]], 
-            use_container_width=True, 
-            hide_index=True
-        )
+    # --- 2. SEKSI TABEL LOG AUDIT (YANG TADI SEMPAT HILANG, SEKARANG DI SINI) ---
+    st.write("---")
+    st.markdown("### 📋 Tabel Log Riwayat Audit Presensi Resmi")
+    
+    df_tampilan_tabel = df_filtered.copy()
+    # Format agar tampilan angka lebih ber-indikator satuan ramah guru
+    df_tampilan_tabel["Bintang"] = df_tampilan_tabel["Bintang"].apply(lambda x: f"{x} ⭐")
+    df_tampilan_tabel["Total Hadir Sesi"] = df_tampilan_tabel["Total Hadir Sesi"].apply(lambda x: f"{x} Hari")
+    
+    st.dataframe(
+        df_tampilan_tabel[["Kelas", "Nama Siswa", "Status", "Tanggal Presensi", "Jam Presensi", "Bintang", "Total Hadir Sesi"]], 
+        use_container_width=True, 
+        hide_index=True
+    )
 
     # --- FITUR ADMIN GURU (DENGAN TOMBOL RESET DATABASE TOTAL) ---
     st.write("---")
