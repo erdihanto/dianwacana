@@ -94,7 +94,25 @@ MASTER_SISWA = {
     "TK B": ["Aileen", "Agatha", "Daniel", "Sean", "Elvano", "Betha", "Hiro"]
 }
 
-# Fungsi Memuat Data dari CSV (Menggunakan struktur baru yang memisahkan tanggal dan jam)
+# Fungsi Membuat Data Awal dari Nol
+def buat_database_baru():
+    rows = []
+    for kelas, daftar_nama in MASTER_SISWA.items():
+        for nama in daftar_nama:
+            rows.append({
+                "Kelas": kelas,
+                "Nama Siswa": nama,
+                "Status": "❌ Belum Absen",
+                "Tanggal Presensi": "-",
+                "Jam Presensi": "-",
+                "Bintang": 0,
+                "Total Hadir Sesi": 0
+            })
+    df_awal = pd.DataFrame(rows)
+    df_awal.to_csv(DATA_FILE, index=False)
+    return df_awal
+
+# Fungsi Memuat Data dari CSV
 def muat_data():
     if os.path.exists(DATA_FILE):
         df = pd.read_csv(DATA_FILE)
@@ -107,26 +125,11 @@ def muat_data():
         if "Jam Presensi" not in df.columns:
             df["Jam Presensi"] = "-"
         if "Total Hadir Sesi" not in df.columns:
-            # Kolom baru untuk melacak rekam akumulasi absensi per anak
             df["Total Hadir Sesi"] = df["Status"].apply(lambda x: 1 if "✅" in str(x) else 0)
             
         return df
     else:
-        rows = []
-        for kelas, daftar_nama in MASTER_SISWA.items():
-            for nama in daftar_nama:
-                rows.append({
-                    "Kelas": kelas,
-                    "Nama Siswa": nama,
-                    "Status": "❌ Belum Absen",
-                    "Tanggal Presensi": "-",
-                    "Jam Presensi": "-",
-                    "Bintang": 0,
-                    "Total Hadir Sesi": 0
-                })
-        df_awal = pd.DataFrame(rows)
-        df_awal.to_csv(DATA_FILE, index=False)
-        return df_awal
+        return buat_database_baru()
 
 # Fungsi Menyimpan Perubahan Data Kembali ke CSV
 def simpan_data(df):
@@ -258,13 +261,11 @@ with kolom_absen:
                 if st.button("✋ SAYA HADIR HARI INI!", type="primary"):
                     sekarang = datetime.now()
                     
-                    # Update data memori: Tanggal & Jam terpisah secara rapi
                     st.session_state.df_master.loc[idx_anak, "Status"] = "✅ Hadir"
                     st.session_state.df_master.loc[idx_anak, "Tanggal Presensi"] = sekarang.strftime("%d-%m-%Y")
                     st.session_state.df_master.loc[idx_anak, "Jam Presensi"] = sekarang.strftime("%H:%M:%S")
                     st.session_state.df_master.loc[idx_anak, "Total Hadir Sesi"] += 1
                     
-                    # SIMPAN PERMANEN KE CSV
                     simpan_data(st.session_state.df_master)
                     
                     st.session_state.game_aktif = get_game(kelas)
@@ -347,7 +348,6 @@ with st.container(border=True):
 
     st.write("<br>", unsafe_allow_html=True)
     
-    # FILTER UTAMA
     pilih_log_kelas = st.radio("Pilih kelas yang ingin dilihat laporannya:", ["Semua Kelas", "KB", "TK A", "TK B"], horizontal=True, key="filter_laporan")
     df_filtered = st.session_state.df_master if pilih_log_kelas == "Semua Kelas" else st.session_state.df_master[st.session_state.df_master["Kelas"] == pilih_log_kelas]
 
@@ -378,7 +378,6 @@ with st.container(border=True):
 
     with tab_kehadiran_anak:
         st.markdown("### Lacak Grafik Total Masuk Kelas")
-        # Dropdown dinamis memilih satu anak spesifik dari kelas terfilter
         daftar_anak_pilihan = sorted(df_filtered["Nama Siswa"].tolist())
         
         if daftar_anak_pilihan:
@@ -387,19 +386,17 @@ with st.container(border=True):
             
             total_hadir_anak = row_grafik_anak["Total Hadir Sesi"]
             
-            # Membuat visualisasi Horizontal Gauge yang ramah anak untuk melihat total hadirnya
             fig_kh, ax_kh = plt.subplots(figsize=(8, 2))
             fig_kh.patch.set_facecolor('#F8FAFC')
             ax_kh.set_facecolor('#FFFFFF')
             
-            # Menggambar chart horizontal batang tunggal
             ax_kh.barh(["Total Hari Hadir"], [total_hadir_anak], color="#10B981", height=0.4, edgecolor="#065F46", linewidth=1.5)
             ax_kh.text(total_hadir_anak + 0.1, 0, f" {total_hadir_anak} Hari Masuk Sekolah 🎉", va='center', ha='left', fontsize=12, fontweight='bold', color='#065F46')
             
             ax_kh.spines['top'].set_visible(False)
             ax_kh.spines['right'].set_visible(False)
             ax_kh.spines['left'].set_visible(False)
-            ax_kh.set_xlim(0, max(total_hadir_anak + 3, 10)) # Skala minimal dinamis hingga 10 hari sekolah
+            ax_kh.set_xlim(0, max(total_hadir_anak + 3, 10))
             ax_kh.set_xlabel("Akumulasi Hari Masuk Kelas (Sesi)", fontsize=9, fontweight='bold', color='#64748B')
             
             st.pyplot(fig_kh)
@@ -420,14 +417,38 @@ with st.container(border=True):
         hide_index=True
     )
 
-    # --- FITUR TAMBAHAN GURU ---
+    # --- FITUR ADMIN GURU (DENGAN TOMBOL RESET DATABASE TOTAL) ---
     st.write("---")
     with st.expander("⚙️ Menu Admin Guru (Ms. Siska)"):
-        st.warning("Tombol di bawah ini akan mereset status kehadiran HARI INI saja agar besok anak-anak bisa absen kembali, namun data akumulasi bintang dan total hari masuk anak akan TETAP UTUH disimpan.")
-        if st.button("🔄 Mulai Sesi Hari Baru (Reset Status Harian)"):
+        st.markdown("### 🔄 Kontrol Sembuh & Siklus Sesi")
+        
+        # Opsi 1: Hanya Reset Kehadiran Harian (Bintang & Total Hadir Tetap Aman)
+        if st.button("🔄 Mulai Sesi Hari Baru (Reset Status Harian Saja)"):
             st.session_state.df_master["Status"] = "❌ Belum Absen"
             st.session_state.df_master["Tanggal Presensi"] = "-"
             st.session_state.df_master["Jam Presensi"] = "-"
             simpan_data(st.session_state.df_master)
-            st.success("Sesi harian berhasil di-reset untuk besok! Rekam riwayat total hadir dan bintang siswa aman.")
+            st.success("Sesi harian berhasil di-reset! Besok anak-anak bisa absen ulang, rekam data lama aman.")
             st.rerun()
+            
+        st.write("<br>", unsafe_allow_html=True)
+        st.write("---")
+        
+        # Opsi 2: RESET TOTAL UTUH (Tombol Baru Sesuai Permintaan)
+        st.markdown("### ⚠️ Area Bahaya (Reset Pabrik)")
+        st.error("Perhatian: Tombol di bawah ini akan menghapus semua riwayat secara PERMANEN. Bintang dan total hari masuk seluruh siswa akan kembali menjadi 0.")
+        
+        # Konfirmasi Keamanan Tambahan lewat Checkbox agar tidak sengaja terpencet
+        konfirmasi_reset = st.checkbox("Saya benar-benar ingin mengosongkan seluruh database (Bintang & Absen kembali ke 0)")
+        
+        if st.button("🚨 RESET TOTAL DATA DATABASE (Kembali ke Nol)", type="secondary"):
+            if konfirmasi_reset:
+                # Memanggil fungsi pembuat data awal dari nol dan menimpa file CSV lama
+                st.session_state.df_master = buat_database_baru()
+                st.session_state.nama_aktif = "-- Pilih Nama --"
+                st.session_state.game_aktif = None
+                st.session_state.umpan_balik_game = None
+                st.success("💥 Sukses! Seluruh database absensi dan perolehan bintang telah dibersihkan kembali ke pengaturan awal.")
+                st.rerun()
+            else:
+                st.warning("Silakan centang kotak konfirmasi di atas terlebih dahulu untuk membuka kunci tombol reset total!")
