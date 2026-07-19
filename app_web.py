@@ -1,6 +1,7 @@
 import streamlit as st
 import random
 import pandas as pd
+from datetime import datetime
 
 # 1. Konfigurasi Halaman Browser
 st.set_page_config(page_title="Absensi Ceria & Coding", page_icon="🎨", layout="wide")
@@ -94,6 +95,10 @@ if 'database_siswa' not in st.session_state:
 if 'status_hadir' not in st.session_state:
     st.session_state.status_hadir = {kelas: {nama: False for nama in siswa} for kelas, siswa in st.session_state.database_siswa.items()}
 
+# State tambahan untuk menyimpan waktu presensi absen secara spesifik
+if 'waktu_hadir' not in st.session_state:
+    st.session_state.waktu_hadir = {kelas: {nama: "-" for nama in siswa} for kelas, siswa in st.session_state.database_siswa.items()}
+
 if 'game_aktif' not in st.session_state:
     st.session_state.game_aktif = None
 
@@ -169,15 +174,18 @@ with kolom_absen:
         if nama_terpilih != "-- Pilih Nama --":
             hadir = st.session_state.status_hadir[kelas][nama_terpilih]
             bintang = st.session_state.database_siswa[kelas][nama_terpilih]
+            waktu = st.session_state.waktu_hadir[kelas][nama_terpilih]
             
             if hadir:
                 st.markdown("<h1 style='text-align: center; margin:0;'>🥰</h1>", unsafe_allow_html=True)
-                st.success(f"Selamat Datang, {nama_terpilih}! Kamu sudah absen. Bintangmu: {bintang} ⭐")
+                st.success(f"Selamat Datang, {nama_terpilih}! Kamu sudah absen pada {waktu}. Bintangmu: {bintang} ⭐")
             else:
                 st.markdown("<h1 style='text-align: center; margin:0;'>😊</h1>", unsafe_allow_html=True)
                 st.warning(f"Halo {nama_terpilih}, kamu belum mengonfirmasi kehadiran.")
                 if st.button("✋ SAYA HADIR HARI INI!", type="primary"):
                     st.session_state.status_hadir[kelas][nama_terpilih] = True
+                    # Mencatat waktu presensi secara real-time
+                    st.session_state.waktu_hadir[kelas][nama_terpilih] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
                     st.session_state.game_aktif = get_game(kelas)
                     st.session_state.umpan_balik_game = None
                     st.rerun()
@@ -236,33 +244,32 @@ with kolom_game:
 
 st.write("<br>", unsafe_allow_html=True)
 
-# ==================== FRAME 3: LOG & REKAPITULASI ABSENSI (BAWAH) ====================
-# Membuat bingkai penuh di bagian paling bawah
+# ==================== FRAME 3: LOG & REKAPITULASI ABSENSI DENGAN JAM (BAWAH) ====================
 with st.container(border=True):
     st.subheader("📊 Log & Hasil Absensi Real-Time")
     
     # Filter Tampilan Log per Kelas
     pilih_log_kelas = st.radio("Tampilkan data kelas:", ["Semua Kelas", "KB", "TK A", "TK B"], horizontal=True)
     
-    # Memproses data session state menjadi bentuk List Objek agar bisa dimasukkan ke Tabel Dataframe
     data_rekap = []
     for klis, daftar_anak in st.session_state.database_siswa.items():
         if pilih_log_kelas == "Semua Kelas" or pilih_log_kelas == klis:
             for nama_anak, skor_bintang in daftar_anak.items():
                 apakah_hadir = st.session_state.status_hadir[klis][nama_anak]
                 status_emoji = "✅ Hadir" if apakah_hadir else "❌ Belum Absen"
+                catatan_waktu = st.session_state.waktu_hadir[klis][nama_anak]
                 
                 data_rekap.append({
                     "Kelas": klis,
                     "Nama Siswa": nama_anak,
                     "Status Kehadiran": status_emoji,
+                    "Tanggal & Jam Absen": catatan_waktu,
                     "Bintang Didapat": f"{skor_bintang} ⭐"
                 })
                 
-    # Konversi data ke format Pandas DataFrame agar terkunci di dalam komponen tabel data browser
     df = pd.DataFrame(data_rekap)
     
-    # Menampilkan tabel interaktif yang rapi di dalam frame
+    # Menampilkan tabel interaktif
     st.dataframe(
         df, 
         use_container_width=True, 
