@@ -2,6 +2,8 @@ import streamlit as st
 import random
 import pandas as pd
 from datetime import datetime
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # 1. Konfigurasi Halaman Browser
 st.set_page_config(page_title="Dashboard Absensi Dian Wacana", page_icon="📊", layout="wide")
@@ -96,9 +98,9 @@ st.markdown("""
 # --- DATABASE STATE ---
 if 'database_siswa' not in st.session_state:
     st.session_state.database_siswa = {
-        "KB": {"Adit": 0, "Amari": 0, "Levin": 0, "Sienny": 0, "Jesselyn": 0, "Kenzou": 0, "Ralf": 0},
-        "TK A": {"Kenzie": 0, "Brigitta": 0, "Essy": 0, "Felicia": 0, "Geva": 0, "Greesa": 0, "Laras": 0, "Liam": 0},
-        "TK B": {"Aileen": 0, "Agatha": 0, "Daniel": 0, "Sean": 0, "Elvano": 0, "Betha": 0, "Hiro": 0}
+        "KB": {"Adit": 2, "Amari": 4, "Levin": 1, "Sienny": 5, "Jesselyn": 3, "Kenzou": 2, "Ralf": 4},
+        "TK A": {"Kenzie": 3, "Brigitta": 5, "Essy": 2, "Felicia": 4, "Geva": 1, "Greesa": 3, "Laras": 5, "Liam": 2},
+        "TK B": {"Aileen": 4, "Agatha": 5, "Daniel": 3, "Sean": 2, "Elvano": 5, "Betha": 1, "Hiro": 4}
     }
 
 if 'status_hadir' not in st.session_state:
@@ -283,7 +285,7 @@ st.write("<br><br>", unsafe_allow_html=True)
 # ==================== COMPONENT UTAMA: LOG & GRAFIK LAPORAN AKHIR ====================
 st.write("---")
 with st.container(border=True):
-    st.markdown("<h2 style='color:#1E3A8A; margin-top:0;'>📊 Laporan Akhir & Analisis Perolehan Bintang</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color:#1E3A8A; margin-top:0;'>📊 Papan Prestasi & Laporan Kehadiran Kelas</h2>", unsafe_allow_html=True)
     
     # Pemrosesan Data Master untuk Laporan
     data_rekap = []
@@ -322,24 +324,58 @@ with st.container(border=True):
 
     st.write("<br>", unsafe_allow_html=True)
     
-    # --- SECTION B: GRAFIK DATA AKTIVITAS ---
-    st.markdown("### 📈 Visualisasi Perolehan Bintang Siswa")
+    # --- SECTION B: GRAFIK DATA AKTIVITAS (TEMA ANAK-ANAK) ---
+    st.markdown("### 🌈 Papan Bintang Ceria Kita!")
     
     # Filter Tampilan Laporan & Grafik per Kelas
-    pilih_log_kelas = st.radio("Saring data Laporan & Grafik:", ["Semua Kelas", "KB", "TK A", "TK B"], horizontal=True, key="filter_laporan")
+    pilih_log_kelas = st.radio("Pilih kelas yang ingin dilihat papan bintangnya:", ["Semua Kelas", "KB", "TK A", "TK B"], horizontal=True, key="filter_laporan")
     
-    # Filter DataFrame berdasarkan pilihan radio button
     if pilih_log_kelas != "Semua Kelas":
         df_filtered = df[df["Kelas"] == pilih_log_kelas]
     else:
         df_filtered = df
 
-    # Membuat Chart Batang Yang Bersih & Profesional
+    # Papan grafik kustom bertema anak-anak
     if not df_filtered.empty and df_filtered["Bintang"].sum() > 0:
-        chart_data = df_filtered.set_index("Nama Siswa")[["Bintang"]]
-        st.bar_chart(chart_data, color="#3B82F6")
+        # Mengatur konfigurasi gaya grafik Matplotlib
+        fig, ax = plt.subplots(figsize=(10, 4.5))
+        fig.patch.set_facecolor('#F8FAFC')  # Menyamakan dengan warna dasar aplikasi
+        ax.set_facecolor('#FFFFFF')
+        
+        # Menggunakan palet warna pastel pelangi ceria
+        warna_warni = sns.color_palette("pastel", len(df_filtered))
+        
+        # Membuat bar chart
+        bars = ax.bar(df_filtered["Nama Siswa"], df_filtered["Bintang"], color=warna_warni, edgecolor='#E2E8F0', width=0.6, linewidth=1.5)
+        
+        # Menambahkan dekorasi angka bintang di atas setiap bar
+        for bar in bars:
+            tinggi = bar.get_height()
+            # Tulis angka bintang
+            ax.text(bar.get_x() + bar.get_width()/2., tinggi + 0.2, f'{int(tinggi)}',
+                    ha='center', va='bottom', fontsize=12, fontweight='bold', color='#1E3A8A')
+            # Gambar Ikon Bintang Lucu di ujung atas bar
+            ax.text(bar.get_x() + bar.get_width()/2., tinggi + 0.02, '⭐',
+                    ha='center', va='center', fontsize=15)
+            
+        # Merapikan batas garis diagram (Menghilangkan box kaku)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_color('#CBD5E1')
+        ax.spines['bottom'].set_color('#CBD5E1')
+        
+        # Pengaturan label teks sumbu
+        ax.tick_params(axis='x', rotation=30, labelsize=10, colors='#334155')
+        ax.tick_params(axis='y', labelsize=9, colors='#64748B')
+        ax.set_ylabel("Jumlah Bintang", fontsize=10, fontweight='bold', color='#64748B')
+        
+        # Menyesuaikan batas atas sumbu Y agar teks angka tidak terpotong
+        ax.set_ylim(0, df_filtered["Bintang"].max() + 1)
+        
+        # Tampilkan ke Streamlit secara rapi
+        st.pyplot(fig)
     else:
-        st.info("ℹ️ Belum ada perolehan bintang untuk divisualisasikan pada kelas ini.")
+        st.info("ℹ️ Belum ada perolehan bintang untuk divisualisasikan pada kelompok kelas ini.")
 
     st.write("<br>", unsafe_allow_html=True)
     
