@@ -4,7 +4,7 @@ import random
 # 1. Konfigurasi Halaman Browser
 st.set_page_config(page_title="Absensi Ceria & Coding", page_icon="🎨", layout="wide")
 
-# 2. SUNTIKAN CSS UNTUK TAMPILAN MODERN POP (BERSIH, CERIA, & RAMAH ANAK)
+# 2. SUNTIKAN CSS DENGAN FRAME (BINGKAI) MODERN POP
 st.markdown("""
     <style>
     /* Background Terang Modern Pop */
@@ -13,7 +13,7 @@ st.markdown("""
         color: #1F2937;
     }
     
-    /* Judul Utama Estetik & Bersih */
+    /* Judul Utama */
     .judul-utama {
         font-family: 'Inter', 'Segoe UI', sans-serif;
         color: #3B82F6;
@@ -51,19 +51,21 @@ st.markdown("""
         margin-bottom: 30px;
     }
     
-    /* Kartu Desain Grid Minimalis & Modern */
+    /* KARTU DENGAN AKSEN FRAME (BINGKAI RAPI) */
     .kartu-absen {
         background-color: #FFFFFF;
-        border: 2px solid #E5E7EB;
+        border: 3px solid #E5E7EB; /* Bingkai luar */
+        border-top: 8px solid #3B82F6; /* Aksen warna biru di atas frame */
         border-radius: 20px;
         padding: 30px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         margin-bottom: 20px;
     }
     
     .kartu-game {
         background-color: #FFFFFF;
-        border: 2px solid #DBEAFE;
+        border: 3px solid #DBEAFE; /* Bingkai luar */
+        border-top: 8px solid #10B981; /* Aksen warna hijau di atas frame */
         border-radius: 20px;
         padding: 30px;
         box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.05);
@@ -76,11 +78,11 @@ st.markdown("""
     }
     
     .kartu-game h3 {
-        color: #2563EB !important;
+        color: #10B981 !important;
         font-weight: 700;
     }
     
-    /* Tombol Rounded Modern ala Duolingo */
+    /* Tombol Rounded Modern */
     .stButton>button {
         border-radius: 12px !important;
         font-size: 16px !important;
@@ -99,18 +101,16 @@ st.markdown("""
         transform: translateY(-1px);
     }
     
-    /* Tombol Aksi Utama (Warna Biru Cerah) */
+    /* Tombol Aksi Utama */
     .stButton>button[data-testid="baseButton-primary"] {
         background-color: #3B82F6 !important;
         color: #FFFFFF !important;
         border: none !important;
-        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
     }
     
     .stButton>button[data-testid="baseButton-primary"]:hover {
         background-color: #2563EB !important;
         color: #FFFFFF !important;
-        box-shadow: 0 6px 10px rgba(59, 130, 246, 0.3);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -139,44 +139,101 @@ if 'game_aktif' not in st.session_state:
 if 'umpan_balik_game' not in st.session_state:
     st.session_state.umpan_balik_game = None
 
-# --- BANK DATA GAME DENGAN VARIASI LEBIH BANYAK ---
+# --- MESIN GENERATOR GAME OTOMATIS (RATUSAN VARIASI SOAL) ---
 def get_game(kategori):
+    tipe_game = random.choice(["manual", "auto_hitung", "auto_pola", "auto_coding"])
+    
+    # 🌟 KATEGORI KELOMPOK BERMAIN (KB) - Fokus Visual & Warna
     if kategori == "KB":
-        return random.choice([
-            ("🍎 🍎 🍎", "Ada berapa jumlah buah apel merah di atas?", ["1", "2", "3"], "3"),
-            ("🐱", "Suara hewan apakah di atas?", ["Guk-Guk 🐕", "Meong 🐈", "Kwek-Kwek 🦆"], "Meong 🐈"),
-            ("💛", "Warna apakah balon hati di atas?", ["Merah ❤️", "Biru 💙", "Kuning 💛"], "Kuning 💛"),
-            ("🍌", "Buah apa yang paling disukai monyet?", ["Pisang 🍌", "Anggur 🍇", "Semangka 🍉"], "Pisang 🍌"),
-            ("🥛", "Minuman sehat berwarna putih yang dihasilkan sapi adalah...", ["Susu 🥛", "Jus 🧃", "Kopi ☕"], "Susu 🥛"),
-            ("🔴", "Bentuk apakah gambar di atas?", ["Kotak 🟦", "Lingkaran 🔴", "Segitiga 🔺"], "Lingkaran 🔴"),
-            ("🚗", "Kendaraan di atas memiliki roda sebanyak...", ["2 Roda", "3 Roda", "4 Roda"], "4 Roda")
-        ])
+        if tipe_game == "auto_hitung":
+            # Menghasilkan hitungan benda acak 1-5
+            emoji = random.choice(["🍎", "🐱", "🍌", "🚗", "🧸", "⭐", "🎈"])
+            jumlah = random.randint(1, 4)
+            visual = " ".join([emoji] * jumlah)
+            opsi = sorted(list(set([str(jumlah), str(random.randint(1, 5)), str(random.randint(1, 5))])))
+            if len(opsi) < 3: opsi = ["1", "2", "3"] # Fallback jika angka duplikat
+            return (visual, f"Ada berapa jumlah {emoji} di atas?", opsi, str(jumlah))
+        else:
+            # Bank Soal Manual Seru untuk KB
+            return random.choice([
+                ("💛", "Warna apakah balon hati di atas?", ["Merah ❤️", "Biru 💙", "Kuning 💛"], "Kuning 💛"),
+                ("🐱", "Suara hewan apakah di atas?", ["Guk-Guk 🐕", "Meong 🐈", "Kwek-Kwek 🦆"], "Meong 🐈"),
+                ("🥛", "Minuman sehat berwarna putih dari sapi adalah...", ["Susu 🥛", "Jus 🧃", "Kopi ☕"], "Susu 🥛"),
+                ("🔴", "Bentuk apakah gambar di atas?", ["Kotak 🟦", "Lingkaran 🔴", "Segitiga 🔺"], "Lingkaran 🔴"),
+                ("🦖", "Dinosaurus di atas berbadan besar atau kecil?", ["Kecil Sekali", "Besar Sekali", "Setinggi Semut"], "Besar Sekali"),
+                ("🍦", "Es krim di atas rasanya...", ["Asin", "Pedas", "Manis & Dingin"], "Manis & Dingin")
+            ])
+
+    # 🌟 KATEGORI TK A - Fokus Hitungan Menengah & Pola Visual
     elif kategori == "TK A":
-        return random.choice([
-            ("🐘 ... 🐁", "Siapa yang ukuran badannya LEBIH BESAR?", ["Gajah 🐘", "Tikus 🐁", "Semut 🐜"], "Gajah 🐘"),
-            ("A, B, _, D", "Huruf apa yang hilang di tengah?", ["C", "M", "Q"], "C"),
-            ("🚗 🚗 🚕 🚗", "Mobil ke berapa yang warnanya BERBEDA sendiri?", ["Ke-1", "Ke-2", "Ke-3"], "Ke-3"),
-            ("🌧️", "Bagaimana cuaca pada gambar awan di atas?", ["Cerah ☀️", "Hujan 🌧️", "Petir ⛈️"], "Hujan 🌧️"),
-            ("🐸 🟩 \n 🦩 ...", "Katak berwarna hijau. Burung Flamingo berwarna apa ya?", ["Biru 💙", "Merah Muda 🦩", "Kuning 💛"], "Merah Muda 🦩"),
-            ("🔴 🔵 🔴 🔵 _", "Ayo tebak pola! Gambar apa selanjutnya setelah lingkaran biru?", ["Lingkaran Merah 🔴", "Lingkaran Biru 🔵", "Bintang ⭐"], "Lingkaran Merah 🔴"),
-            ("🧸 🧸 🧸 🧸 🧸", "Ada 5 boneka beruang. Jika diambil 2, sisanya tinggal berapa?", ["2", "3", "4"], "3"),
-            ("🐢", "Jalan hewan di atas jalannya lambat atau cepat ya?", ["Lambat sekali", "Cepat sekali", "Terbang"], "Lambat sekali")
-        ])
-    else: # TK B (Persiapan Coding & Logika)
-        return random.choice([
-            ("4 + 3 = ?", "Berapakah hasil penjumlahan di atas?", ["6", "7", "8"], "7"),
-            ("R _ M A H", "Huruf vokal apa yang hilang untuk melengkapi kata?", ["A", "I", "U"], "U"),
-            ("✈️", "Kendaraan di atas tempat jalannya di mana ya?", ["Darat 🛣️", "Laut 🌊", "Udara ☁️"], "Udara ☁️"),
-            ("🔥 (PANAS)", "Apa LAWAN KATA dari benda PANAS?", ["DINGIN ❄️", "MALAM 🌙", "KOTOR 🪰"], "DINGIN ❄️"),
-            ("🔼 (Maju 1 Langkah)", "Jika robot di kotak 1 maju 2 langkah (🔼 🔼), di kotak berapa dia sekarang?", ["Kotak 2", "Kotak 3", "Kotak 4"], "Kotak 3"),
-            ("☀️", "Matahari terbit di sebelah mana dan pada waktu kapan?", ["Timur - Pagi 🌅", "Barat - Sore 🌇", "Utara - Malam 🌌"], "Timur - Pagi 🌅"),
-            ("10, 8, 6, _", "Ayo hitung mundur! Angka berapakah selanjutnya?", ["5", "4", "3"], "4"),
-            ("🐝 👍 🥛", "Madu dihasilkan oleh lebah. Kalau susu dihasilkan oleh...", ["Ayam 🐓", "Sapi 🐄", "Bebek 🦆"], "Sapi 🐄"),
-            ("🟥 🟨 🟩 🟥 🟨 _", "Ayo lanjutkan pola warna lampu lalu lintas ini!", ["Merah 🟥", "Kuning 🟨", "Hijau 🟩"], "Hijau 🟩")
-        ])
+        if tipe_game == "auto_hitung":
+            # Hitungan penjumlahan sederhana di bawah 5
+            a = random.randint(1, 3)
+            b = random.randint(1, 2)
+            kunci = a + b
+            opsi = sorted(list(set([str(kunci), str(kunci+1), str(kunci-1 if kunci-1 > 0 else kunci+2)])))
+            return (f"{a} + {b} = ?", "Ayo hitung berapa hasil penjumlahan di atas!", opsi, str(kunci))
+            
+        elif tipe_game == "auto_pola":
+            # Pola ABAB acak
+            e1, e2 = random.sample(["🔴", "🔵", "🟡", "🟢", "⭐", "💎"], 2)
+            visual = f"{e1} {e2} {e1} {e2} __"
+            return (visual, "Ayo tebak! Gambar apa selanjutnya untuk mengisi garis kosong?", [e1, e2, "❓"], e1)
+            
+        else:
+            return random.choice([
+                ("🐘 ... 🐁", "Siapa yang ukuran badannya LEBIH BESAR?", ["Gajah 🐘", "Tikus 🐁", "Semut 🐜"], "Gajah 🐘"),
+                ("A, B, _, D", "Huruf apa yang hilang di tengah?", ["C", "M", "Q"], "C"),
+                ("🚗 🚗 🔑 🚗", "Benda ke berapa yang BUKAN kendaraan?", ["Ke-1", "Ke-2", "Ke-3"], "Ke-3"),
+                ("🌧️", "Bagaimana cuaca pada gambar awan di atas?", ["Cerah ☀️", "Hujan 🌧️", "Petir ⛈️"], "Hujan 🌧️"),
+                ("🐸 🟩 \n 🦩 ...", "Katak itu Hijau. Kalau burung Flamingo warna apa ya?", ["Biru 💙", "Merah Muda 🦩", "Kuning 💛"], "Merah Muda 🦩"),
+                ("🐢", "Jalan hewan di atas jalannya lambat atau cepat ya?", ["Lambat", "Cepat", "Terbang"], "Lambat")
+            ])
+
+    # 🌟 KATEGORI TK B - Fokus Logika Coding, Matematika & Hitung Mundur
+    else:
+        if tipe_game == "auto_hitung":
+            # Penjumlahan / Pengurangan acak angka 1-10
+            mode = random.choice(["+", "-"])
+            if mode == "+":
+                a, b = random.randint(2, 6), random.randint(1, 4)
+                kunci = a + b
+            else:
+                a, b = random.randint(5, 10), random.randint(1, 4)
+                kunci = a - b
+            opsi = sorted(list(set([str(kunci), str(kunci+1), str(kunci-1 if kunci-1 >= 0 else kunci+2)])))
+            return (f"{a} {mode} {b} = ?", "Berapakah hasil perhitungan matematika di atas?", opsi, str(kunci))
+            
+        elif tipe_game == "auto_coding":
+            # Logika Langkah Arah Grid Coding Robot
+            kotak_awal = random.randint(1, 3)
+            langkah = random.randint(1, 2)
+            kunci = kotak_awal + langkah
+            visual = "🔼 " * langkah
+            return (f"Posisi Awal: Kotak {kotak_awal} \n\n Instruksi Robot: {visual}", 
+                    f"Jika robot maju {langkah} langkah ke atas, di kotak nomor berapa posisi robot sekarang?", 
+                    [f"Kotak {kunci}", f"Kotak {kunci+1}", f"Kotak {kunci-1 if kunci-1 > 0 else kunci+2}"], f"Kotak {kunci}")
+        
+        elif tipe_game == "auto_pola":
+            # Urutan angka melompat (Hitung maju/mundur)
+            start = random.randint(5, 10)
+            visual = f"{start}, {start-1}, {start-2}, __"
+            kunci = start - 3
+            return (visual, "Ayo hitung mundur! Angka berapakah selanjutnya?", [str(kunci), str(kunci-1), str(kunci+1)], str(kunci))
+            
+            # Soal Manual Logika
+        else:
+            return random.choice([
+                ("R _ M A H", "Huruf vokal apa yang hilang untuk melengkapi kata?", ["A", "I", "U"], "U"),
+                ("✈️", "Kendaraan di atas tempat jalannya di mana ya?", ["Darat 🛣️", "Laut 🌊", "Udara ☁️"], "Udara ☁️"),
+                ("🔥 (PANAS)", "Apa LAWAN KATA dari benda PANAS?", ["DINGIN ❄️", "MALAM 🌙", "KOTOR 🪰"], "DINGIN ❄️"),
+                ("☀️", "Matahari terbit di sebelah mana dan pada waktu kapan?", ["Timur - Pagi 🌅", "Barat - Sore 🌇", "Utara - Malam 🌌"], "Timur - Pagi 🌅"),
+                ("🐝 👍 🥛", "Madu dihasilkan oleh lebah. Kalau susu dihasilkan oleh...", ["Ayam 🐓", "Sapi 🐄", "Bebek 🦆"], "Sapi 🐄"),
+                ("🟥 🟨 🟩 🟥 🟨 _", "Ayo lanjutkan pola warna lampu lalu lintas ini!", ["Merah 🟥", "Kuning 🟨", "Hijau 🟩"], "Hijau 🟩")
+            ])
 
 # --- HEADER APLIKASI ---
-st.markdown('<div class="judul-utama">🏫 ABSENSI CERIA & PLAY ZONE</div>', unsafe_allow_html=True)
+st.markdown('<div class="judul-utama">🏫 ABSENSI CERIA & CODING SMART</div>', unsafe_allow_html=True)
 st.markdown('<div class="nama-sekolah">KB-TK Kristen Dian Wacana</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-judul">🎈 KASIH • INTEGRITAS • PEDULI • TAAT 🎈</div>', unsafe_allow_html=True)
 st.markdown('<div class="guru-mapel">👩‍🏫 Guru Mapel: Ms. Siska</div>', unsafe_allow_html=True)
@@ -184,7 +241,7 @@ st.markdown('<div class="guru-mapel">👩‍🏫 Guru Mapel: Ms. Siska</div>', u
 # --- LAYOUT DUA KOLOM UTAMA ---
 kolom_kiri, kolom_kanan = st.columns([1, 1.1], gap="large")
 
-# ==================== PANEL KIRI: ABSENSI MODERN ====================
+# ==================== PANEL KIRI: ABSENSI BINGKAI RAPI ====================
 with kolom_kiri:
     st.markdown('<div class="kartu-absen">', unsafe_allow_html=True)
     st.markdown("### ✨ 1. Pilih Kelas & Namamu")
@@ -219,7 +276,7 @@ with kolom_kiri:
         
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ==================== PANEL KANAN: ZONA BERMAIN SERU ====================
+# ==================== PANEL KANAN: ZONA BERMAIN KAYA VARIASI ====================
 with kolom_kanan:
     st.markdown('<div class="kartu-game">', unsafe_allow_html=True)
     st.markdown(f"### 🎮 ZONA TANTANGAN CERDAS ({kelas})")
@@ -233,13 +290,13 @@ with kolom_kanan:
             st.markdown("<h2 style='text-align: center; color: #10B981;'>🏆 HEBAT! JAWABANMU BENAR! 🎉</h2>", unsafe_allow_html=True)
             st.markdown("<h4 style='text-align: center; color: #3B82F6;'>Kamu dapat 1 ⭐ tambahan! Hore!</h4>", unsafe_allow_html=True)
             
-            if st.button("🚀 MAIN LAGI! 🎮", type="primary"):
+            if st.button("🚀 TANTANGAN SELANJUTNYA! 🎮", type="primary"):
                 st.session_state.game_aktif = get_game(kelas)
                 st.session_state.umpan_balik_game = None
                 st.rerun()
         else:
             if st.session_state.game_aktif:
-                if st.button("🎲 GANTI PERMAINAN", type="secondary"):
+                if st.button("🎲 GANTI PERMAINAN BARU", type="secondary"):
                     st.session_state.game_aktif = get_game(kelas)
                     st.session_state.umpan_balik_game = None
                     st.rerun()
@@ -250,8 +307,8 @@ with kolom_kanan:
             if st.session_state.game_aktif:
                 visual, pertanyaan, opsi, jawaban_benar = st.session_state.game_aktif
                 
-                # Kotak pertanyaan yang bersih dan empuk di mata
-                st.markdown(f"<h1 style='text-align: center; font-size: 85px; background-color: #F8FAFC; border: 2px solid #E2E8F0; border-radius: 16px; padding: 20px; margin-bottom: 20px;'>{visual}</h1>", unsafe_allow_html=True)
+                # Kotak visual soal di dalam frame game
+                st.markdown(f"<h1 style='text-align: center; font-size: 75px; background-color: #F8FAFC; border: 2px solid #E2E8F0; border-radius: 16px; padding: 20px; margin-bottom: 20px;'>{visual}</h1>", unsafe_allow_html=True)
                 st.markdown(f"<h5 style='text-align: center; color: #1F2937; font-size: 18px; margin-bottom: 25px;'>{pertanyaan}</h5>", unsafe_allow_html=True)
                 
                 kol_opsi = st.columns(len(opsi))
