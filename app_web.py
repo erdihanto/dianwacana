@@ -9,13 +9,10 @@ st.set_page_config(page_title="Absensi Ceria & Coding", page_icon="🎨", layout
 # 2. SUNTIKAN CSS UNTUK STYLE APLIKASI WEB CLEAN FRAME
 st.markdown("""
     <style>
-    /* Mengubah background utama aplikasi agar bersih dan soft */
     .stApp {
         background-color: #F8FAFC;
         color: #0F172A;
     }
-    
-    /* Desain Header Utama ala Kalkulator Web */
     .header-kontainer {
         text-align: center;
         background-color: #FFFFFF;
@@ -25,7 +22,6 @@ st.markdown("""
         margin-bottom: 25px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
-    
     .judul-utama {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         color: #1E3A8A;
@@ -45,8 +41,6 @@ st.markdown("""
         font-size: 14px;
         margin-top: 2px;
     }
-
-    /* Memaksa bingkai internal Streamlit st.container(border=True) agar terlihat tegas dan rapi */
     .stElementContainer div[data-testid="stVerticalBlockBorderContainer"] {
         background-color: #FFFFFF !important;
         border: 2px solid #E2E8F0 !important;
@@ -54,8 +48,6 @@ st.markdown("""
         padding: 25px !important;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
     }
-    
-    /* Efek visual kotak soal game di dalam frame */
     .kotak-soal {
         text-align: center; 
         font-size: 60px; 
@@ -65,8 +57,6 @@ st.markdown("""
         padding: 15px; 
         margin-bottom: 15px;
     }
-    
-    /* Desain Tombol agar seragam dan flat rapi */
     .stButton>button {
         border-radius: 8px !important;
         font-weight: 600 !important;
@@ -98,16 +88,19 @@ if 'status_hadir' not in st.session_state:
 if 'waktu_hadir' not in st.session_state:
     st.session_state.waktu_hadir = {kelas: {nama: "-" for nama in siswa} for kelas, siswa in st.session_state.database_siswa.items()}
 
+# State baru untuk mengunci nama yang sedang dipilih agar tidak reset saat diklik
+if 'nama_aktif' not in st.session_state:
+    st.session_state.nama_aktif = "-- Pilih Nama --"
+
 if 'game_aktif' not in st.session_state:
     st.session_state.game_aktif = None
 
 if 'umpan_balik_game' not in st.session_state:
     st.session_state.umpan_balik_game = None
 
-# --- GENERATOR SOAL OTOMATIS (100+ VARIASI KELAS KANAN) ---
+# --- GENERATOR SOAL OTOMATIS ---
 def get_game(kategori):
     tipe_game = random.choice(["hitung", "pola", "logika", "arah"])
-    
     if kategori == "KB":
         if tipe_game == "hitung":
             emoji = random.choice(["🍎", "🍌", "🚗", "🧸", "⭐"])
@@ -156,7 +149,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# --- GRID UTAMA: 2 KOLOM FRAME MANDIRI ---
+# --- GRID UTAMA ---
 kolom_absen, kolom_game = st.columns(2, gap="large")
 
 # ==================== FRAME 1: PANEL ABSENSI (KIRI) ====================
@@ -164,16 +157,23 @@ with kolom_absen:
     with st.container(border=True):
         st.subheader("📋 Bingkai Absensi Siswa")
         
+        # Reset nama aktif jika anak mengganti kategori kelas
+        if 'kelas_lama' not in st.session_state:
+            st.session_state.kelas_lama = "KB"
+        
         kelas = st.selectbox("1. Pilih Kelas Kelompok:", ["KB", "TK A", "TK B"])
         
-        # MODIFIKASI: Mengubah teks nama di dalam list combobox secara dinamis
+        if kelas != st.session_state.kelas_lama:
+            st.session_state.nama_aktif = "-- Pilih Nama --"
+            st.session_state.kelas_lama = kelas
+        
         daftar_nama_asli = sorted(list(st.session_state.database_siswa[kelas].keys()))
         
-        # Membuat opsi tampilan baru dengan tanda centang hijau bagi yang sudah absen
         opsi_selectbox = ["-- Pilih Nama --"]
-        mapping_nama = {"-- Pilih Nama --": "-- Pilih Nama --"} # Untuk mengembalikan teks ke nama asli database
+        mapping_nama = {"-- Pilih Nama --": "-- Pilih Nama --"}
+        indeks_default = 0
         
-        for nama in daftar_nama_asli:
+        for i, nama in enumerate(daftar_nama_asli):
             if st.session_state.status_hadir[kelas][nama]:
                 label_tampilan = f"✅ {nama} (Sudah Hadir)"
             else:
@@ -182,9 +182,17 @@ with kolom_absen:
             opsi_selectbox.append(label_tampilan)
             mapping_nama[label_tampilan] = nama
             
-        pilihan_tampilan = st.selectbox("2. Cari & Klik Namamu:", opsi_selectbox)
-        # Ambil nama asli tanpa emoji untuk mencocokkan dengan database session state
+            # Jika nama ini adalah nama yang sedang aktif dipilih, kunci indeksnya
+            if nama == st.session_state.nama_aktif:
+                indeks_default = i + 1
+        
+        pilihan_tampilan = st.selectbox(
+            "2. Cari & Klik Namamu:", 
+            opsi_selectbox, 
+            index=indeks_default
+        )
         nama_terpilih = mapping_nama[pilihan_tampilan]
+        st.session_state.nama_aktif = nama_terpilih
         
         st.write("---")
         
