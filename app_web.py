@@ -94,12 +94,24 @@ MASTER_SISWA = {
     "TK B": ["Aileen", "Agatha", "Daniel", "Sean", "Elvano", "Betha", "Hiro"]
 }
 
-# Fungsi Memuat Data dari CSV (Jika file belum ada, otomatis membuat baru dengan bintang 0)
+# Fungsi Memuat Data dari CSV (Menggunakan struktur baru yang memisahkan tanggal dan jam)
 def muat_data():
     if os.path.exists(DATA_FILE):
-        return pd.read_csv(DATA_FILE)
+        df = pd.read_csv(DATA_FILE)
+        
+        # Penyesuaian otomatis jika file CSV lama masih menggunakan kolom gabungan
+        if "Waktu Presensi" in df.columns:
+            df = df.drop(columns=["Waktu Presensi"])
+        if "Tanggal Presensi" not in df.columns:
+            df["Tanggal Presensi"] = "-"
+        if "Jam Presensi" not in df.columns:
+            df["Jam Presensi"] = "-"
+        if "Total Hadir Sesi" not in df.columns:
+            # Kolom baru untuk melacak rekam akumulasi absensi per anak
+            df["Total Hadir Sesi"] = df["Status"].apply(lambda x: 1 if "✅" in str(x) else 0)
+            
+        return df
     else:
-        # Generate basis data awal jika file kosong
         rows = []
         for kelas, daftar_nama in MASTER_SISWA.items():
             for nama in daftar_nama:
@@ -107,8 +119,10 @@ def muat_data():
                     "Kelas": kelas,
                     "Nama Siswa": nama,
                     "Status": "❌ Belum Absen",
-                    "Waktu Presensi": "-",
-                    "Bintang": 0
+                    "Tanggal Presensi": "-",
+                    "Jam Presensi": "-",
+                    "Bintang": 0,
+                    "Total Hadir Sesi": 0
                 })
         df_awal = pd.DataFrame(rows)
         df_awal.to_csv(DATA_FILE, index=False)
@@ -227,24 +241,28 @@ with kolom_absen:
         st.write("---")
         
         if nama_terpilled != "-- Pilih Nama --":
-            # Ambil record data spesifik anak tersebut dari DataFrame
             idx_anak = st.session_state.df_master[(st.session_state.df_master["Kelas"] == kelas) & (st.session_state.df_master["Nama Siswa"] == nama_terpilled)].index[0]
             row_anak = st.session_state.df_master.loc[idx_anak]
             
             hadir = "✅" in row_anak["Status"]
             bintang = row_anak["Bintang"]
-            waktu = row_anak["Waktu Presensi"]
+            tgl_absen = row_anak["Tanggal Presensi"]
+            jam_absen = row_anak["Jam Presensi"]
             
             if hadir:
                 st.markdown("<h1 style='text-align: center; margin:0;'>🥰</h1>", unsafe_allow_html=True)
-                st.success(f"Selamat Datang, {nama_terpilled}! Kamu sudah absen pada {waktu}. Bintangmu saat ini: {bintang} ⭐")
+                st.success(f"Selamat Datang, {nama_terpilled}! Masuk tanggal {tgl_absen} pukul {jam_absen}. Bintangmu: {bintang} ⭐")
             else:
                 st.markdown("<h1 style='text-align: center; margin:0;'>😊</h1>", unsafe_allow_html=True)
                 st.warning(f"Halo {nama_terpilled}, kamu belum mengonfirmasi kehadiran.")
                 if st.button("✋ SAYA HADIR HARI INI!", type="primary"):
-                    # Perbarui data ke DataFrame memori
+                    sekarang = datetime.now()
+                    
+                    # Update data memori: Tanggal & Jam terpisah secara rapi
                     st.session_state.df_master.loc[idx_anak, "Status"] = "✅ Hadir"
-                    st.session_state.df_master.loc[idx_anak, "Waktu Presensi"] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                    st.session_state.df_master.loc[idx_anak, "Tanggal Presensi"] = sekarang.strftime("%d-%m-%Y")
+                    st.session_state.df_master.loc[idx_anak, "Jam Presensi"] = sekarang.strftime("%H:%M:%S")
+                    st.session_state.df_master.loc[idx_anak, "Total Hadir Sesi"] += 1
                     
                     # SIMPAN PERMANEN KE CSV
                     simpan_data(st.session_state.df_master)
@@ -295,12 +313,8 @@ with kolom_game:
                         with kol_opsi[i]:
                             if st.button(alternatif, key=f"btn_{alternatif}_{i}"):
                                 if alternatif == jawaban_benar:
-                                    # Tambah skor bintang di memori
                                     st.session_state.df_master.loc[idx_anak, "Bintang"] += 1
-                                    
-                                    # SIMPAN PERMANEN KE CSV
                                     simpan_data(st.session_state.df_master)
-                                    
                                     st.session_state.umpan_balik_game = "benar"
                                     st.rerun()
                                 else:
@@ -319,11 +333,9 @@ st.write("---")
 with st.container(border=True):
     st.markdown("<h2 style='color:#1E3A8A; margin-top:0;'>📊 Papan Prestasi & Laporan Kehadiran Kelas</h2>", unsafe_allow_html=True)
     
-    # Hitung KPI Statistik secara berkala berdasarkan isi DataFrame master saat ini
     total_siswa = len(st.session_state.df_master)
     total_hadir = len(st.session_state.df_master[st.session_state.df_master["Status"] == "✅ Hadir"])
     
-    # --- SECTION A: RINGKASAN METRIK ---
     col_m1, col_m2, col_m3 = st.columns(3)
     with col_m1:
         st.markdown(f"<div class='metric-card'>🔑 <b>Total Siswa Terdaftar</b><br><span style='font-size:24px; font-weight:700;'>{total_siswa} Anak</span></div>", unsafe_allow_html=True)
@@ -335,66 +347,87 @@ with st.container(border=True):
 
     st.write("<br>", unsafe_allow_html=True)
     
-    # --- SECTION B: GRAFIK DATA AKTIVITAS (TEMA ANAK-ANAK) ---
-    st.markdown("### 🌈 Papan Bintang Ceria Kita!")
-    
-    # Filter Tampilan Laporan & Grafik per Kelas
-    pilih_log_kelas = st.radio("Pilih kelas yang ingin dilihat papan bintangnya:", ["Semua Kelas", "KB", "TK A", "TK B"], horizontal=True, key="filter_laporan")
-    
-    if pilih_log_kelas != "Semua Kelas":
-        df_filtered = st.session_state.df_master[st.session_state.df_master["Kelas"] == pilih_log_kelas]
-    else:
-        df_filtered = st.session_state.df_master
+    # FILTER UTAMA
+    pilih_log_kelas = st.radio("Pilih kelas yang ingin dilihat laporannya:", ["Semua Kelas", "KB", "TK A", "TK B"], horizontal=True, key="filter_laporan")
+    df_filtered = st.session_state.df_master if pilih_log_kelas == "Semua Kelas" else st.session_state.df_master[st.session_state.df_master["Kelas"] == pilih_log_kelas]
 
-    # Papan grafik kustom bertema anak-anak
-    if not df_filtered.empty and df_filtered["Bintang"].sum() > 0:
-        fig, ax = plt.subplots(figsize=(10, 4.5))
-        fig.patch.set_facecolor('#F8FAFC')
-        ax.set_facecolor('#FFFFFF')
-        
-        warna_warni = sns.color_palette("pastel", len(df_filtered))
-        bars = ax.bar(df_filtered["Nama Siswa"], df_filtered["Bintang"], color=warna_warni, edgecolor='#E2E8F0', width=0.6, linewidth=1.5)
-        
-        for bar in bars:
-            tinggi = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2., tinggi + 0.2, f'{int(tinggi)}', ha='center', va='bottom', fontsize=12, fontweight='bold', color='#1E3A8A')
-            ax.text(bar.get_x() + bar.get_width()/2., tinggi + 0.02, '⭐', ha='center', va='center', fontsize=15)
+    # --- MENU TAB GRAFIK ---
+    tab_bintang, tab_kehadiran_anak = st.tabs(["🌈 Papan Bintang Ceria", "📈 Grafik Kehadiran Mandiri per Anak"])
+    
+    with tab_bintang:
+        if not df_filtered.empty and df_filtered["Bintang"].sum() > 0:
+            fig, ax = plt.subplots(figsize=(10, 4))
+            fig.patch.set_facecolor('#F8FAFC')
+            ax.set_facecolor('#FFFFFF')
             
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_color('#CBD5E1')
-        ax.spines['bottom'].set_color('#CBD5E1')
+            warna_warni = sns.color_palette("pastel", len(df_filtered))
+            bars = ax.bar(df_filtered["Nama Siswa"], df_filtered["Bintang"], color=warna_warni, edgecolor='#E2E8F0', width=0.55)
+            
+            for bar in bars:
+                tinggi = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., tinggi + 0.1, f'{int(tinggi)}', ha='center', va='bottom', fontsize=10, fontweight='bold', color='#1E3A8A')
+                ax.text(bar.get_x() + bar.get_width()/2., tinggi + 0.01, '⭐', ha='center', va='center', fontsize=12)
+                
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.tick_params(axis='x', rotation=30, labelsize=9)
+            ax.set_ylabel("Jumlah Bintang", fontsize=9, fontweight='bold')
+            st.pyplot(fig)
+        else:
+            st.info("ℹ️ Belum ada perolehan bintang untuk divisualisasikan pada kelompok kelas ini.")
+
+    with tab_kehadiran_anak:
+        st.markdown("### Lacak Grafik Total Masuk Kelas")
+        # Dropdown dinamis memilih satu anak spesifik dari kelas terfilter
+        daftar_anak_pilihan = sorted(df_filtered["Nama Siswa"].tolist())
         
-        ax.tick_params(axis='x', rotation=30, labelsize=10, colors='#334155')
-        ax.tick_params(axis='y', labelsize=9, colors='#64748B')
-        ax.set_ylabel("Jumlah Bintang", fontsize=10, fontweight='bold', color='#64748B')
-        ax.set_ylim(0, df_filtered["Bintang"].max() + 1)
-        
-        st.pyplot(fig)
-    else:
-        st.info("ℹ️ Belum ada perolehan bintang untuk divisualisasikan pada kelompok kelas ini.")
+        if daftar_anak_pilihan:
+            anak_dipilih = st.selectbox("Pilih nama anak untuk melihat grafik tren absensinya:", daftar_anak_pilihan)
+            row_grafik_anak = df_filtered[df_filtered["Nama Siswa"] == anak_dipilih].iloc[0]
+            
+            total_hadir_anak = row_grafik_anak["Total Hadir Sesi"]
+            
+            # Membuat visualisasi Horizontal Gauge yang ramah anak untuk melihat total hadirnya
+            fig_kh, ax_kh = plt.subplots(figsize=(8, 2))
+            fig_kh.patch.set_facecolor('#F8FAFC')
+            ax_kh.set_facecolor('#FFFFFF')
+            
+            # Menggambar chart horizontal batang tunggal
+            ax_kh.barh(["Total Hari Hadir"], [total_hadir_anak], color="#10B981", height=0.4, edgecolor="#065F46", linewidth=1.5)
+            ax_kh.text(total_hadir_anak + 0.1, 0, f" {total_hadir_anak} Hari Masuk Sekolah 🎉", va='center', ha='left', fontsize=12, fontweight='bold', color='#065F46')
+            
+            ax_kh.spines['top'].set_visible(False)
+            ax_kh.spines['right'].set_visible(False)
+            ax_kh.spines['left'].set_visible(False)
+            ax_kh.set_xlim(0, max(total_hadir_anak + 3, 10)) # Skala minimal dinamis hingga 10 hari sekolah
+            ax_kh.set_xlabel("Akumulasi Hari Masuk Kelas (Sesi)", fontsize=9, fontweight='bold', color='#64748B')
+            
+            st.pyplot(fig_kh)
+        else:
+            st.info("ℹ️ Pilih kategori kelas terlebih dahulu untuk melihat grafik data anak.")
 
     st.write("<br>", unsafe_allow_html=True)
     
-    # --- SECTION C: DATA TABEL (LOG DETIL) ---
+    # --- TABLE DATA AUDIT TERBARU ---
     st.markdown("### 📋 Tabel Log Audit Absensi Resmi")
-    
     df_tampilan_tabel = df_filtered.copy()
     df_tampilan_tabel["Bintang"] = df_tampilan_tabel["Bintang"].apply(lambda x: f"{x} ⭐")
+    df_tampilan_tabel["Total Hadir Sesi"] = df_tampilan_tabel["Total Hadir Sesi"].apply(lambda x: f"{x} Hari")
     
     st.dataframe(
-        df_tampilan_tabel, 
+        df_tampilan_tabel[["Kelas", "Nama Siswa", "Status", "Tanggal Presensi", "Jam Presensi", "Bintang", "Total Hadir Sesi"]], 
         use_container_width=True, 
         hide_index=True
     )
 
-    # --- FITUR TAMBAHAN GURU: TOMBOL RESET (UNTUK HARI BARU) ---
+    # --- FITUR TAMBAHAN GURU ---
     st.write("---")
     with st.expander("⚙️ Menu Admin Guru (Ms. Siska)"):
-        st.warning("Tombol di bawah ini akan menghapus status kehadiran hari ini namun TETAP MEMPERTAHANKAN akumulasi bintang anak-anak untuk hari berikutnya.")
-        if st.button("🔄 Mulai Sesi Hari Baru (Reset Absensi Saja)"):
+        st.warning("Tombol di bawah ini akan mereset status kehadiran HARI INI saja agar besok anak-anak bisa absen kembali, namun data akumulasi bintang dan total hari masuk anak akan TETAP UTUH disimpan.")
+        if st.button("🔄 Mulai Sesi Hari Baru (Reset Status Harian)"):
             st.session_state.df_master["Status"] = "❌ Belum Absen"
-            st.session_state.df_master["Waktu Presensi"] = "-"
+            st.session_state.df_master["Tanggal Presensi"] = "-"
+            st.session_state.df_master["Jam Presensi"] = "-"
             simpan_data(st.session_state.df_master)
-            st.success("Sesi absensi berhasil di-reset untuk hari baru! Bintang anak-anak tetap aman terakumulasi.")
+            st.success("Sesi harian berhasil di-reset untuk besok! Rekam riwayat total hadir dan bintang siswa aman.")
             st.rerun()
