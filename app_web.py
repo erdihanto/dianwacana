@@ -98,9 +98,9 @@ st.markdown("""
 # --- DATABASE STATE ---
 if 'database_siswa' not in st.session_state:
     st.session_state.database_siswa = {
-        "KB": {"Adit": 2, "Amari": 4, "Levin": 1, "Sienny": 5, "Jesselyn": 3, "Kenzou": 2, "Ralf": 4},
-        "TK A": {"Kenzie": 3, "Brigitta": 5, "Essy": 2, "Felicia": 4, "Geva": 1, "Greesa": 3, "Laras": 5, "Liam": 2},
-        "TK B": {"Aileen": 4, "Agatha": 5, "Daniel": 3, "Sean": 2, "Elvano": 5, "Betha": 1, "Hiro": 4}
+       "KB": {"Adit": 0, "Amari": 0, "Levin": 0, "Sienny": 0, "Jesselyn": 0, "Kenzou": 0, "Ralf": 0},
+        "TK A": {"Kenzie": 0, "Brigitta": 0, "Essy": 0, "Felicia": 0, "Geva": 0, "Greesa": 0, "Laras": 0, "Liam": 0},
+        "TK B": {"Aileen": 0, "Agatha": 0, "Daniel": 0, "Sean": 0, "Elvano": 0, "Betha": 0, "Hiro": 0}
     }
 
 if 'status_hadir' not in st.session_state:
