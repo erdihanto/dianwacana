@@ -116,10 +116,6 @@ if 'game_aktif' not in st.session_state:
 if 'umpan_balik_game' not in st.session_state:
     st.session_state.umpan_balik_game = None
 
-# State Pengunci Aplikasi (Selesai Kelas)
-if 'aplikasi_terkunci' not in st.session_state:
-    st.session_state.aplikasi_terkunci = False
-
 # --- GENERATOR SOAL OTOMATIS ---
 def get_game(kategori):
     tipe_game = random.choice(["hitung", "pola", "logika", "arah"])
@@ -171,142 +167,120 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
+# GRID UTAMA: Panel Input & Game
+kolom_absen, kolom_game = st.columns(2, gap="large")
 
-# ==================== KONDISI 1: JIKA APLIKASI BELUM DIKUNCI ====================
-if not st.session_state.aplikasi_terkunci:
+# FRAME 1: PANEL ABSENSI (KIRI)
+with kolom_absen:
+    with st.container(border=True):
+        st.subheader("📋 Bingkai Absensi Siswa")
+        
+        if 'kelas_lama' not in st.session_state:
+            st.session_state.kelas_lama = "KB"
+        
+        kelas = st.selectbox("1. Pilih Kelas Kelompok:", ["KB", "TK A", "TK B"])
+        
+        if kelas != st.session_state.kelas_lama:
+            st.session_state.nama_aktif = "-- Pilih Nama --"
+            st.session_state.kelas_lama = kelas
+        
+        daftar_nama_asli = sorted(list(st.session_state.database_siswa[kelas].keys()))
+        
+        opsi_selectbox = ["-- Pilih Nama --"]
+        mapping_nama = {"-- Pilih Nama --": "-- Pilih Nama --"}
+        indeks_default = 0
+        
+        for i, nama in enumerate(daftar_nama_asli):
+            if st.session_state.status_hadir[kelas][nama]:
+                label_tampilan = f"✅ {nama} (Sudah Hadir)"
+            else:
+                label_tampilan = nama
+            
+            opsi_selectbox.append(label_tampilan)
+            mapping_nama[label_tampilan] = nama
+            
+            if nama == st.session_state.nama_aktif:
+                indeks_default = i + 1
+        
+        pilihan_tampilan = st.selectbox("2. Cari & Klik Namamu:", opsi_selectbox, index=indeks_default)
+        nama_terpilled = mapping_nama[pilihan_tampilan]
+        st.session_state.nama_aktif = nama_terpilled
+        
+        st.write("---")
+        
+        if nama_terpilled != "-- Pilih Nama --":
+            hadir = st.session_state.status_hadir[kelas][nama_terpilled]
+            bintang = st.session_state.database_siswa[kelas][nama_terpilled]
+            waktu = st.session_state.waktu_hadir[kelas][nama_terpilled]
+            
+            if hadir:
+                st.markdown("<h1 style='text-align: center; margin:0;'>🥰</h1>", unsafe_allow_html=True)
+                st.success(f"Selamat Datang, {nama_terpilled}! Kamu sudah absen pada {waktu}. Bintangmu: {bintang} ⭐")
+            else:
+                st.markdown("<h1 style='text-align: center; margin:0;'>😊</h1>", unsafe_allow_html=True)
+                st.warning(f"Halo {nama_terpilled}, kamu belum mengonfirmasi kehadiran.")
+                if st.button("✋ SAYA HADIR HARI INI!", type="primary"):
+                    st.session_state.status_hadir[kelas][nama_terpilled] = True
+                    st.session_state.waktu_hadir[kelas][nama_terpilled] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                    st.session_state.game_aktif = get_game(kelas)
+                    st.session_state.umpan_balik_game = None
+                    st.rerun()
+        else:
+            st.markdown("<h1 style='text-align: center; margin:0;'>👋</h1>", unsafe_allow_html=True)
+            st.info("Silakan tentukan nama kamu di atas terlebih dahulu.")
 
-    # GRID UTAMA: Panel Input & Game
-    kolom_absen, kolom_game = st.columns(2, gap="large")
-
-    # FRAME 1: PANEL ABSENSI (KIRI)
-    with kolom_absen:
-        with st.container(border=True):
-            st.subheader("📋 Bingkai Absensi Siswa")
-            
-            if 'kelas_lama' not in st.session_state:
-                st.session_state.kelas_lama = "KB"
-            
-            kelas = st.selectbox("1. Pilih Kelas Kelompok:", ["KB", "TK A", "TK B"])
-            
-            if kelas != st.session_state.kelas_lama:
-                st.session_state.nama_aktif = "-- Pilih Nama --"
-                st.session_state.kelas_lama = kelas
-            
-            daftar_nama_asli = sorted(list(st.session_state.database_siswa[kelas].keys()))
-            
-            opsi_selectbox = ["-- Pilih Nama --"]
-            mapping_nama = {"-- Pilih Nama --": "-- Pilih Nama --"}
-            indeks_default = 0
-            
-            for i, nama in enumerate(daftar_nama_asli):
-                if st.session_state.status_hadir[kelas][nama]:
-                    label_tampilan = f"✅ {nama} (Sudah Hadir)"
-                else:
-                    label_tampilan = nama
-                
-                opsi_selectbox.append(label_tampilan)
-                mapping_nama[label_tampilan] = nama
-                
-                if nama == st.session_state.nama_aktif:
-                    indeks_default = i + 1
-            
-            pilihan_tampilan = st.selectbox("2. Cari & Klik Namamu:", opsi_selectbox, index=indeks_default)
-            nama_terpilled = mapping_nama[pilihan_tampilan]
-            st.session_state.nama_aktif = nama_terpilled
-            
-            st.write("---")
-            
-            if nama_terpilled != "-- Pilih Nama --":
-                hadir = st.session_state.status_hadir[kelas][nama_terpilled]
-                bintang = st.session_state.database_siswa[kelas][nama_terpilled]
-                waktu = st.session_state.waktu_hadir[kelas][nama_terpilled]
-                
-                if hadir:
-                    st.markdown("<h1 style='text-align: center; margin:0;'>🥰</h1>", unsafe_allow_html=True)
-                    st.success(f"Selamat Datang, {nama_terpilled}! Kamu sudah absen pada {waktu}. Bintangmu: {bintang} ⭐")
-                else:
-                    st.markdown("<h1 style='text-align: center; margin:0;'>😊</h1>", unsafe_allow_html=True)
-                    st.warning(f"Halo {nama_terpilled}, kamu belum mengonfirmasi kehadiran.")
-                    if st.button("✋ SAYA HADIR HARI INI!", type="primary"):
-                        st.session_state.status_hadir[kelas][nama_terpilled] = True
-                        st.session_state.waktu_hadir[kelas][nama_terpilled] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+# FRAME 2: PANEL GAME (KANAN)
+with kolom_game:
+    with st.container(border=True):
+        st.subheader("🎮 Bingkai Tantangan Game")
+        
+        if nama_terpilled == "-- Pilih Nama --" or not st.session_state.status_hadir[kelas][nama_terpilled]:
+            st.markdown("<h1 style='text-align: center; margin: 30px 0;'>🔒</h1>", unsafe_allow_html=True)
+            st.info("Game Terkunci. Silakan lakukan **Absen Hadir** di frame sebelah kiri untuk membukanya!")
+        else:
+            if st.session_state.umpan_balik_game == "benar":
+                st.balloons()
+                st.markdown("<h3 style='text-align: center; color: #10B981;'>🏆 JAWABAN BENAR! +1 ⭐</h3>", unsafe_allow_html=True)
+                if st.button("🚀 LANJUT GAME BERIKUTNYA", type="primary"):
+                    st.session_state.game_aktif = get_game(kelas)
+                    st.session_state.umpan_balik_game = None
+                    st.rerun()
+            else:
+                if st.session_state.game_aktif:
+                    if st.button("🎲 GANTI SOAL BARU"):
                         st.session_state.game_aktif = get_game(kelas)
                         st.session_state.umpan_balik_game = None
                         st.rerun()
-            else:
-                st.markdown("<h1 style='text-align: center; margin:0;'>👋</h1>", unsafe_allow_html=True)
-                st.info("Silakan tentukan nama kamu di atas terlebih dahulu.")
+                
+                if st.session_state.umpan_balik_game == "salah":
+                    st.error("❌ Jawaban kurang tepat, coba lagi ya sayang!")
 
-    # FRAME 2: PANEL GAME (KANAN)
-    with kolom_game:
-        with st.container(border=True):
-            st.subheader("🎮 Bingkai Tantangan Game")
-            
-            if nama_terpilled == "-- Pilih Nama --" or not st.session_state.status_hadir[kelas][nama_terpilled]:
-                st.markdown("<h1 style='text-align: center; margin: 30px 0;'>🔒</h1>", unsafe_allow_html=True)
-                st.info("Game Terkunci. Silakan lakukan **Absen Hadir** di frame sebelah kiri untuk membukanya!")
-            else:
-                if st.session_state.umpan_balik_game == "benar":
-                    st.balloons()
-                    st.markdown("<h3 style='text-align: center; color: #10B981;'>🏆 JAWABAN BENAR! +1 ⭐</h3>", unsafe_allow_html=True)
-                    if st.button("🚀 LANJUT GAME BERIKUTNYA", type="primary"):
-                        st.session_state.game_aktif = get_game(kelas)
-                        st.session_state.umpan_balik_game = None
-                        st.rerun()
-                else:
-                    if st.session_state.game_aktif:
-                        if st.button("🎲 GANTI SOAL BARU"):
-                            st.session_state.game_aktif = get_game(kelas)
-                            st.session_state.umpan_balik_game = None
-                            st.rerun()
+                if st.session_state.game_aktif:
+                    visual, pertanyaan, opsi, jawaban_benar = st.session_state.game_aktif
                     
-                    if st.session_state.umpan_balik_game == "salah":
-                        st.error("❌ Jawaban kurang tepat, coba lagi ya sayang!")
+                    st.markdown(f'<div class="kotak-soal">{visual}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<p style="text-align:center; font-weight:600;">{pertanyaan}</p>', unsafe_allow_html=True)
+                    
+                    kol_opsi = st.columns(len(opsi))
+                    for i, alternatif in enumerate(opsi):
+                        with kol_opsi[i]:
+                            if st.button(alternatif, key=f"btn_{alternatif}_{i}"):
+                                if alternatif == jawaban_benar:
+                                    st.session_state.database_siswa[kelas][nama_terpilled] += 1
+                                    st.session_state.umpan_balik_game = "benar"
+                                    st.rerun()
+                                else:
+                                    st.session_state.umpan_balik_game = "salah"
+                                    st.rerun()
+                else:
+                    if st.button("🎲 MULAI BERMAIN", type="primary"):
+                        st.session_state.game_aktif = get_game(kelas)
+                        st.session_state.umpan_balik_game = None
+                        st.rerun()
 
-                    if st.session_state.game_aktif:
-                        visual, pertanyaan, opsi, jawaban_benar = st.session_state.game_aktif
-                        
-                        st.markdown(f'<div class="kotak-soal">{visual}</div>', unsafe_allow_html=True)
-                        st.markdown(f'<p style="text-align:center; font-weight:600;">{pertanyaan}</p>', unsafe_allow_html=True)
-                        
-                        kol_opsi = st.columns(len(opsi))
-                        for i, alternatif in enumerate(opsi):
-                            with kol_opsi[i]:
-                                if st.button(alternatif, key=f"btn_{alternatif}_{i}"):
-                                    if alternatif == jawaban_benar:
-                                        st.session_state.database_siswa[kelas][nama_terpilled] += 1
-                                        st.session_state.umpan_balik_game = "benar"
-                                        st.rerun()
-                                    else:
-                                        st.session_state.umpan_balik_game = "salah"
-                                        st.rerun()
-                    else:
-                        if st.button("🎲 MULAI BERMAIN", type="primary"):
-                            st.session_state.game_aktif = get_game(kelas)
-                            st.session_state.umpan_balik_game = None
-                            st.rerun()
+st.write("<br><br>", unsafe_allow_html=True)
 
-    st.write("<br><br>", unsafe_allow_html=True)
-    
-    # KONTROL DARI GURU (UNTUK KELUAR / KUNCI SESI)
-    col_kosong, col_tombol_keluar = st.columns([3, 1])
-    with col_tombol_keluar:
-        if st.button("🔒 SELESAI & KUNCI SESI ABSENSI", type="secondary"):
-            st.session_state.aplikasi_terkunci = True
-            st.rerun()
-
-
-# ==================== KONDISI 2: JIKA TOMBOL KELUAR/KUNCI SUDAH DIKLIK ====================
-else:
-    st.info("🔒 Sesi interaksi siswa telah ditutup oleh Guru. Aplikasi beralih ke Mode Laporan Eksekutif.")
-    
-    # Tombol untuk kembali membuka absensi (Hanya jika dibutuhkan kembali oleh guru)
-    if st.button("🔓 Buka Kembali Sesi Absensi"):
-        st.session_state.aplikasi_terkunci = False
-        st.rerun()
-
-
-# ==================== COMPONENT UTAMA: LOG & GRAFIK LAPORAN AKHIR (SELALU DI BAWAH) ====================
+# ==================== COMPONENT UTAMA: LOG & GRAFIK LAPORAN AKHIR ====================
 st.write("---")
 with st.container(border=True):
     st.markdown("<h2 style='color:#1E3A8A; margin-top:0;'>📊 Laporan Akhir & Analisis Perolehan Bintang</h2>", unsafe_allow_html=True)
@@ -362,7 +336,6 @@ with st.container(border=True):
 
     # Membuat Chart Batang Yang Bersih & Profesional
     if not df_filtered.empty and df_filtered["Bintang"].sum() > 0:
-        # Menyiapkan data khusus untuk chart (Sumbu X: Nama Siswa, Sumbu Y: Jumlah Bintang)
         chart_data = df_filtered.set_index("Nama Siswa")[["Bintang"]]
         st.bar_chart(chart_data, color="#3B82F6")
     else:
@@ -373,7 +346,6 @@ with st.container(border=True):
     # --- SECTION C: DATA TABEL (LOG DETIL) ---
     st.markdown("### 📋 Tabel Log Audit Absensi Resmi")
     
-    # Modifikasi tampilan kolom khusus tabel agar terlihat elegan
     df_tampilan_tabel = df_filtered.copy()
     df_tampilan_tabel["Bintang"] = df_tampilan_tabel["Bintang"].apply(lambda x: f"{x} ⭐")
     
