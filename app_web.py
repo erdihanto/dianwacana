@@ -1,7 +1,7 @@
 import streamlit as st
 import random
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta  # Ditambahkan timedelta untuk penyesuaian zona waktu
 import os
 import plotly.express as px
 
@@ -254,11 +254,12 @@ with kolom_absen:
                 st.markdown("<h1 style='text-align: center; margin:0;'>😊</h1>", unsafe_allow_html=True)
                 st.warning(f"Halo {nama_terpilled}, kamu belum mengonfirmasi kehadiran.")
                 if st.button("✋ SAYA HADIR HARI INI!", type="primary"):
-                    sekarang = datetime.now()
+                    # PERBAIKAN: Mengunci zona waktu server ke Waktu Indonesia Barat (WIB = UTC+7)
+                    waktu_wib = datetime.utcnow() + timedelta(hours=7)
                     
                     st.session_state.df_master.loc[idx_anak, "Status"] = "✅ Hadir"
-                    st.session_state.df_master.loc[idx_anak, "Tanggal Presensi"] = sekarang.strftime("%d-%m-%Y")
-                    st.session_state.df_master.loc[idx_anak, "Jam Presensi"] = sekarang.strftime("%H:%M:%S")
+                    st.session_state.df_master.loc[idx_anak, "Tanggal Presensi"] = waktu_wib.strftime("%d-%m-%Y")
+                    st.session_state.df_master.loc[idx_anak, "Jam Presensi"] = waktu_wib.strftime("%H:%M:%S")
                     st.session_state.df_master.loc[idx_anak, "Total Hadir Sesi"] += 1
                     
                     simpan_data(st.session_state.df_master)
