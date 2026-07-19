@@ -3,7 +3,7 @@ import random
 import pandas as pd
 from datetime import datetime
 import os
-import plotly.express as px  # Pastikan sudah install plotly (pip install plotly)
+import plotly.express as px
 
 # 1. Konfigurasi Halaman Browser
 st.set_page_config(page_title="Dashboard Absensi Dian Wacana", page_icon="📊", layout="wide")
@@ -80,6 +80,13 @@ st.markdown("""
         text-align: center;
         border: 1px solid #E2E8F0;
     }
+    .ai-box {
+        background-color: #F0FDF4;
+        border-left: 5px solid #16A34A;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -115,7 +122,6 @@ def buat_database_baru():
 def muat_data():
     if os.path.exists(DATA_FILE):
         df = pd.read_csv(DATA_FILE)
-        
         if "Waktu Presensi" in df.columns:
             df = df.drop(columns=["Waktu Presensi"])
         if "Tanggal Presensi" not in df.columns:
@@ -124,7 +130,6 @@ def muat_data():
             df["Jam Presensi"] = "-"
         if "Total Hadir Sesi" not in df.columns:
             df["Total Hadir Sesi"] = df["Status"].apply(lambda x: 1 if "✅" in str(x) else 0)
-            
         return df
     else:
         return buat_database_baru()
@@ -223,7 +228,7 @@ with kolom_absen:
         
         for i, nama in enumerate(daftar_nama_asli):
             status_siswa = df_kelas[df_kelas["Nama Siswa"] == nama]["Status"].values[0]
-            if "✅" in status_siswa:
+            if "✅" in str(status_siswa):
                 label_tampilan = f"✅ {nama} (Sudah Hadir)"
             else:
                 label_tampilan = nama
@@ -244,7 +249,7 @@ with kolom_absen:
             idx_anak = st.session_state.df_master[(st.session_state.df_master["Kelas"] == kelas) & (st.session_state.df_master["Nama Siswa"] == nama_terpilled)].index[0]
             row_anak = st.session_state.df_master.loc[idx_anak]
             
-            hadir = "✅" in row_anak["Status"]
+            hadir = "✅" in str(row_anak["Status"])
             bintang = row_anak["Bintang"]
             tgl_absen = row_anak["Tanggal Presensi"]
             jam_absen = row_anak["Jam Presensi"]
@@ -277,7 +282,11 @@ with kolom_game:
     with st.container(border=True):
         st.subheader("🎮 Bingkai Tantangan Game")
         
-        if nama_terpilled == "-- Pilih Nama --" or not ("✅" in st.session_state.df_master[(st.session_state.df_master["Kelas"] == kelas) & (st.session_state.df_master["Nama Siswa"] == nama_terpilled)]["Status"].values[0]):
+        status_absen_siswa = ""
+        if nama_terpilled != "-- Pilih Nama --":
+            status_absen_siswa = st.session_state.df_master[(st.session_state.df_master["Kelas"] == kelas) & (st.session_state.df_master["Nama Siswa"] == nama_terpilled)]["Status"].values[0]
+        
+        if nama_terpilled == "-- Pilih Nama --" or not ("✅" in str(status_absen_siswa)):
             st.markdown("<h1 style='text-align: center; margin: 30px 0;'>🔒</h1>", unsafe_allow_html=True)
             st.info("Game Terkunci. Silakan lakukan **Absen Hadir** di frame sebelah kiri untuk membukanya!")
         else:
@@ -332,7 +341,7 @@ with st.container(border=True):
     st.markdown("<h2 style='color:#1E3A8A; margin-top:0;'>📊 Papan Analisis & Laporan Kelas Modern</h2>", unsafe_allow_html=True)
     
     total_siswa = len(st.session_state.df_master)
-    total_hadir = len(st.session_state.df_master[st.session_state.df_master["Status"] == "✅ Hadir"])
+    total_hadir = len(st.session_state.df_master[st.session_state.df_master["Status"].str.contains("✅", na=False)])
     total_belum = total_siswa - total_hadir
     
     col_m1, col_m2, col_m3 = st.columns(3)
@@ -349,19 +358,16 @@ with st.container(border=True):
     pilih_log_kelas = st.radio("Pilih filter laporan kelompok kelas:", ["Semua Kelas", "KB", "TK A", "TK B"], horizontal=True, key="filter_laporan")
     df_filtered = st.session_state.df_master if pilih_log_kelas == "Semua Kelas" else st.session_state.df_master[st.session_state.df_master["Kelas"] == pilih_log_kelas]
 
-    # --- 1. SEKSI GRAFIK LINGKARAN (PIE CHART) EXECUTIVE DESIGN DENGAN INFO DI KANAN ---
+    # --- 1. SEKSI GRAFIK LINGKARAN (PIE CHART) ---
     st.markdown("### 🎯 Grafik Proporsi Status Kehadiran Siswa")
     
-    # Hitung data spesifik filter untuk pie chart harian
-    hadir_filter = len(df_filtered[df_filtered["Status"] == "✅ Hadir"])
+    hadir_filter = len(df_filtered[df_filtered["Status"].str.contains("✅", na=False)])
     belum_filter = len(df_filtered) - hadir_filter
     
     if len(df_filtered) > 0:
-        # Siapkan layout kolom: Kiri untuk grafik lingkaran, Kanan untuk info detail profesional
         kol_grafik, kol_info_detail = st.columns([3, 2], gap="large")
         
         with kol_grafik:
-            # Membuat Pie Chart menggunakan Plotly Express
             df_pie = pd.DataFrame({
                 "Status Presensi": ["Sudah Hadir (✅)", "Belum Absen (❌)"],
                 "Jumlah Anak": [hadir_filter, belum_filter]
@@ -373,7 +379,7 @@ with st.container(border=True):
                 names="Status Presensi",
                 color="Status Presensi",
                 color_discrete_map={"Sudah Hadir (✅)": "#10B981", "Belum Absen (❌)": "#EF4444"},
-                hole=0.4  # Model Donut profesional agar elegan
+                hole=0.4
             )
             
             fig.update_layout(
@@ -399,12 +405,11 @@ with st.container(border=True):
     else:
         st.info("ℹ️ Tidak ada data yang tersedia untuk filter kelas ini.")
 
-    # --- 2. SEKSI TABEL LOG AUDIT (YANG TADI SEMPAT HILANG, SEKARANG DI SINI) ---
+    # --- 2. SEKSI TABEL LOG AUDIT ---
     st.write("---")
     st.markdown("### 📋 Tabel Log Riwayat Audit Presensi Resmi")
     
     df_tampilan_tabel = df_filtered.copy()
-    # Format agar tampilan angka lebih ber-indikator satuan ramah guru
     df_tampilan_tabel["Bintang"] = df_tampilan_tabel["Bintang"].apply(lambda x: f"{x} ⭐")
     df_tampilan_tabel["Total Hadir Sesi"] = df_tampilan_tabel["Total Hadir Sesi"].apply(lambda x: f"{x} Hari")
     
@@ -413,6 +418,49 @@ with st.container(border=True):
         use_container_width=True, 
         hide_index=True
     )
+
+    # --- NEW COMPONENT: TOMBOL SARAN AI DINAMIS & UPDATE ---
+    st.write("---")
+    st.markdown("### 🤖 Fitur AI Ms. Siska: Asisten Saran & Insight Kelas")
+    st.caption("AI menganalisis data kehadiran secara langsung berdasarkan log siswa yang aktif di atas.")
+    
+    if st.button("✨ MINTA REKOMENDASI & SARAN AI HARI INI", type="primary"):
+        # Analisis 1: Mencari anak yang hari ini Belum Datang/Absen
+        anak_belum_hadir = df_filtered[~df_filtered["Status"].str.contains("✅", na=False)]["Nama Siswa"].tolist()
+        
+        # Analisis 2: Mencari anak yang sering tidak hadir (Total Hadir Sesi paling rendah, tapi minimal database sudah berjalan beberapa sesi)
+        # Kita ambil ambang batas: anak-anak dengan Total Hadir Sesi di bawah rata-rata kelasnya
+        mean_hadir = df_filtered["Total Hadir Sesi"].mean() if len(df_filtered) > 0 else 0
+        anak_jarang_hadir_df = df_filtered[df_filtered["Total Hadir Sesi"] < mean_hadir]
+        
+        with st.container():
+            st.markdown('<div class="ai-box">', unsafe_allow_html=True)
+            st.markdown("#### 🧠 **Laporan Rekomendasi Pintar AI:**")
+            
+            # Bagian A: Evaluasi Hari ini
+            st.markdown("##### ⏳ **Status Kehadiran Hari ini:**")
+            if anak_belum_hadir:
+                daftar_nama_str = ", ".join(anak_belum_hadir)
+                st.markdown(f"- 📢 **Perlu Diingatkan:** Anak-anak yang belum mengonfirmasi kehadiran hari ini di kelompok **{pilih_log_kelas}** adalah: **{daftar_nama_str}**.")
+                st.markdown("- 💡 *Saran Tindakan:* Ms. Siska dapat mengirimkan pesan sapaan hangat di grup WhatsApp kelas untuk memastikan apakah anak-anak tersebut sedang sakit atau mengalami keterlambatan di jalan.")
+            else:
+                st.markdown("- 🎉 **Luar Biasa!** Semua anak di kelompok filter ini sudah hadir dan mengisi absensi hari ini.")
+
+            st.write("")
+            
+            # Bagian B: Analisis Riwayat Log (Sering Absen/Total Sesi Rendah)
+            st.markdown("##### 📉 **Analisis Log & Konsistensi Jangka Panjang:**")
+            if not anak_jarang_hadir_df.empty and mean_hadir > 0:
+                # Mengurutkan yang paling sedikit hadir
+                anak_jarang_hadir_df = anak_jarang_hadir_df.sort_values(by="Total Hadir Sesi")
+                st.markdown(f"- ⚠️ **Perhatian Khusus:** Berdasarkan riwayat data sesi, beberapa siswa memiliki total kehadiran di bawah rata-rata kelas (`{round(mean_hadir, 1)}` Hari):")
+                for _, row in anak_jarang_hadir_df.iterrows():
+                    st.markdown(f"  * **{row['Nama Siswa']}** (Kelas {row['Kelas']}) — Baru mengikuti `{row['Total Hadir Sesi']}` sesi.")
+                st.markdown("- 💡 *Saran Tindakan AI:* Berikan dorongan atau reward tambahan seperti *'Bintang Selamat Datang'* saat mereka hadir di sesi berikutnya agar memicu semangat belajar anak.")
+            else:
+                st.markdown("- 💎 **Tingkat Konsistensi Stabil:** Seluruh siswa memiliki grafik keaktifan sesi yang merata dan stabil. Pertahankan performa ini!")
+                
+            st.markdown('</div>', unsafe_allow_html=True)
 
     # --- FITUR ADMIN GURU (DENGAN TOMBOL RESET DATABASE TOTAL) ---
     st.write("---")
