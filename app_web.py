@@ -95,7 +95,6 @@ if 'database_siswa' not in st.session_state:
 if 'status_hadir' not in st.session_state:
     st.session_state.status_hadir = {kelas: {nama: False for nama in siswa} for kelas, siswa in st.session_state.database_siswa.items()}
 
-# State tambahan untuk menyimpan waktu presensi absen secara spesifik
 if 'waktu_hadir' not in st.session_state:
     st.session_state.waktu_hadir = {kelas: {nama: "-" for nama in siswa} for kelas, siswa in st.session_state.database_siswa.items()}
 
@@ -166,8 +165,26 @@ with kolom_absen:
         st.subheader("📋 Bingkai Absensi Siswa")
         
         kelas = st.selectbox("1. Pilih Kelas Kelompok:", ["KB", "TK A", "TK B"])
-        daftar_nama = sorted(list(st.session_state.database_siswa[kelas].keys()))
-        nama_terpilih = st.selectbox("2. Cari & Klik Namamu:", ["-- Pilih Nama --"] + daftar_nama)
+        
+        # MODIFIKASI: Mengubah teks nama di dalam list combobox secara dinamis
+        daftar_nama_asli = sorted(list(st.session_state.database_siswa[kelas].keys()))
+        
+        # Membuat opsi tampilan baru dengan tanda centang hijau bagi yang sudah absen
+        opsi_selectbox = ["-- Pilih Nama --"]
+        mapping_nama = {"-- Pilih Nama --": "-- Pilih Nama --"} # Untuk mengembalikan teks ke nama asli database
+        
+        for nama in daftar_nama_asli:
+            if st.session_state.status_hadir[kelas][nama]:
+                label_tampilan = f"✅ {nama} (Sudah Hadir)"
+            else:
+                label_tampilan = nama
+            
+            opsi_selectbox.append(label_tampilan)
+            mapping_nama[label_tampilan] = nama
+            
+        pilihan_tampilan = st.selectbox("2. Cari & Klik Namamu:", opsi_selectbox)
+        # Ambil nama asli tanpa emoji untuk mencocokkan dengan database session state
+        nama_terpilih = mapping_nama[pilihan_tampilan]
         
         st.write("---")
         
@@ -184,7 +201,6 @@ with kolom_absen:
                 st.warning(f"Halo {nama_terpilih}, kamu belum mengonfirmasi kehadiran.")
                 if st.button("✋ SAYA HADIR HARI INI!", type="primary"):
                     st.session_state.status_hadir[kelas][nama_terpilih] = True
-                    # Mencatat waktu presensi secara real-time
                     st.session_state.waktu_hadir[kelas][nama_terpilih] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
                     st.session_state.game_aktif = get_game(kelas)
                     st.session_state.umpan_balik_game = None
@@ -244,11 +260,10 @@ with kolom_game:
 
 st.write("<br>", unsafe_allow_html=True)
 
-# ==================== FRAME 3: LOG & REKAPITULASI ABSENSI DENGAN JAM (BAWAH) ====================
+# ==================== FRAME 3: LOG & REKAPITULASI ABSENSI (BAWAH) ====================
 with st.container(border=True):
     st.subheader("📊 Log & Hasil Absensi Real-Time")
     
-    # Filter Tampilan Log per Kelas
     pilih_log_kelas = st.radio("Tampilkan data kelas:", ["Semua Kelas", "KB", "TK A", "TK B"], horizontal=True)
     
     data_rekap = []
@@ -268,10 +283,4 @@ with st.container(border=True):
                 })
                 
     df = pd.DataFrame(data_rekap)
-    
-    # Menampilkan tabel interaktif
-    st.dataframe(
-        df, 
-        use_container_width=True, 
-        hide_index=True
-    )
+    st.dataframe(df, use_container_width=True, hide_index=True)
