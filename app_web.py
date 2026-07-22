@@ -88,9 +88,9 @@ DATA_FILE = "database_absensi_dian_wacana.csv"
 
 # Daftar Master Siswa Tetap
 MASTER_SISWA = {
-    "KB": ["Adit", "Amari", "Levin", "Sienny", "Jesselyn", "Kenzou", "Ralf"],
-    "TK A": ["Kenzie", "Brigitta", "Essy", "Felicia", "Geva", "Greesa", "Laras", "Liam"],
-    "TK B": ["Aileen", "Agatha", "Daniel", "Sean", "Elvano", "Betha", "Hiro"]
+ "KB": ["Adit", "Amari", "Levin", "Sienny", "Jesselyn", "Kenzou", "Ralf"],
+ "TK A": ["Kenzie", "Brigitta", "Essy", "Felicia", "Geva", "Greesa", "Laras", "Liam","Lova","Nawasena","Mashal","Senja","Viola","Zio"],
+ "TK B": ["Aileen", "Agatha", "Daniel", "Sean", "Elvano", "Betha", "Hiro","Karen","Reiga","Danis","Yura"]
 }
 
 # Fungsi Membuat Data Awal dari Nol
