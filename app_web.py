@@ -181,7 +181,6 @@ if 'umpan_balik_game' not in st.session_state:
 # =========================================================================
 def get_game(kategori):
     if kategori == "KB":
-        # KB: Fokus pada pengenalan dasar (Warna, Hewan, Benda, Hitung 1-3)
         tipe_game = random.choice(["hitung_dasar", "warna", "hewan", "benda"])
         if tipe_game == "hitung_dasar":
             emoji = random.choice(["🍓", "🧸", "🎈", "🐥", "🚗"])
@@ -206,7 +205,6 @@ def get_game(kategori):
             ])
             
     elif kategori == "TK A":
-        # TK A: Penambahan sederhana, pengenalan huruf/awalan, logika ukuran, pola dasar
         tipe_game = random.choice(["hitung", "huruf", "ukuran", "pola"])
         if tipe_game == "hitung":
             a, b = random.randint(1, 3), random.randint(1, 2)
@@ -229,7 +227,6 @@ def get_game(kategori):
             return (f"{e1} {e2} {e1} {e2} ... ?", "Warna apa yang muncul setelah ini?", [e1, e2, "⚫"], e1)
             
     else: 
-        # TK B: Operasi hitung (sampai 10), arah/coding dasar, membaca sederhana, logika sifat
         tipe_game = random.choice(["hitung_tkb", "arah", "membaca", "logika_sifat"])
         if tipe_game == "hitung_tkb":
             mode = random.choice(["+", "-"])
@@ -240,7 +237,6 @@ def get_game(kategori):
                 a, b = random.randint(6, 9), random.randint(1, 4)
                 soal = f"{a} 🍪 dimakan {b} 🍪, sisa = ?"
             kunci = a + b if mode == "+" else a - b
-            # Pastikan kunci tidak negatif
             return (soal, "Yuk berhitung! Berapa jawabannya?", [str(kunci), str(kunci+1), str(kunci-1)], str(kunci))
         elif tipe_game == "arah":
             awal = random.randint(1, 2)
@@ -252,13 +248,18 @@ def get_game(kategori):
                 ("S - A - P - U", "Kata ini digunakan untuk membersihkan lantai, dibaca?", ["SAPI", "SAPU", "SOPU"], "SAPU"),
                 ("M - E - J - A", "Tempat kita menulis di sekolah, dibaca?", ["MAJU", "MEJA", "MATA"], "MEJA")
             ])
-        else: # logika sifat / lawan kata
+        else:
             return random.choice([
                 ("🔥", "Lawan kata dari benda yang PANAS adalah?", ["DINGIN 🧊", "TERANG ☀️", "MANIS 🍬"], "DINGIN 🧊"),
                 ("🍋 vs 🍬", "Makanan manakah yang rasanya MANIS?", ["Permen 🍬", "Jeruk Nipis 🍋", "Garam 🧂"], "Permen 🍬"),
                 ("☀️ vs 🌙", "Matahari muncul pada saat hari sedang?", ["Malam", "Siang", "Hujan"], "Siang")
             ])
 
+# Fungsi baru untuk mengacak soal dan MENGUNCI urutannya ke dalam session state
+def generate_new_game(kelas):
+    visual, pertanyaan, opsi, jawaban_benar = get_game(kelas)
+    opsi_acak = random.sample(opsi, len(opsi)) # Acak posisi tombol hanya sekali di sini
+    return (visual, pertanyaan, opsi_acak, jawaban_benar)
 
 # --- TAMPILAN HEADER ---
 st.markdown("""
@@ -337,7 +338,8 @@ with kolom_absen:
                     
                     simpan_data(st.session_state.df_master)
                     
-                    st.session_state.game_aktif = get_game(kelas)
+                    # Menggunakan fungsi baru untuk mengunci opsi acak
+                    st.session_state.game_aktif = generate_new_game(kelas)
                     st.session_state.umpan_balik_game = None
                     st.rerun()
         else:
@@ -363,13 +365,13 @@ with kolom_game:
                 st.balloons()
                 st.markdown("<h3 style='text-align: center; color: #4ECDC4;'>🌟 YAY BENAR! DAPAT +1 BINTANG!</h3>", unsafe_allow_html=True)
                 if st.button("🚀 MAIN LAGI YUK", type="primary"):
-                    st.session_state.game_aktif = get_game(kelas)
+                    st.session_state.game_aktif = generate_new_game(kelas)
                     st.session_state.umpan_balik_game = None
                     st.rerun()
             else:
                 if st.session_state.game_aktif:
                     if st.button("🔄 GANTI PERTANYAAN"):
-                        st.session_state.game_aktif = get_game(kelas)
+                        st.session_state.game_aktif = generate_new_game(kelas)
                         st.session_state.umpan_balik_game = None
                         st.rerun()
                 
@@ -377,18 +379,17 @@ with kolom_game:
                     st.error("❌ Wah, masih kurang tepat. Tidak apa-apa, ayo coba lagi! 💪")
 
                 if st.session_state.game_aktif:
-                    visual, pertanyaan, opsi, jawaban_benar = st.session_state.game_aktif
+                    # Opsi di sini sekarang sudah dikunci (static) dari fungsi generate_new_game
+                    visual, pertanyaan, opsi_terkunci, jawaban_benar = st.session_state.game_aktif
                     
                     st.markdown(f'<div class="kotak-soal">{visual}</div>', unsafe_allow_html=True)
                     st.markdown(f'<p style="text-align:center; font-weight:700; font-size:20px; color:#6D597A;">{pertanyaan}</p>', unsafe_allow_html=True)
                     
-                    # Randomize urutan opsi agar tidak selalu di posisi yang sama
-                    opsi_acak = random.sample(opsi, len(opsi)) if 'opsi_acak' not in st.session_state or st.session_state.umpan_balik_game == "salah" else opsi
-                    
-                    kol_opsi = st.columns(len(opsi_acak))
-                    for i, alternatif in enumerate(opsi_acak):
+                    kol_opsi = st.columns(len(opsi_terkunci))
+                    for i, alternatif in enumerate(opsi_terkunci):
                         with kol_opsi[i]:
-                            if st.button(alternatif, key=f"btn_{alternatif}_{i}"):
+                            # Tombol menggunakan key yang fix dan stabil
+                            if st.button(alternatif, key=f"btn_jawab_{i}_{alternatif}"):
                                 if alternatif == jawaban_benar:
                                     st.session_state.df_master.loc[idx_anak, "Bintang"] += 1
                                     simpan_data(st.session_state.df_master)
@@ -399,7 +400,7 @@ with kolom_game:
                                     st.rerun()
                 else:
                     if st.button("🎲 MULAI BERMAIN", type="primary"):
-                        st.session_state.game_aktif = get_game(kelas)
+                        st.session_state.game_aktif = generate_new_game(kelas)
                         st.session_state.umpan_balik_game = None
                         st.rerun()
 
