@@ -6,90 +6,114 @@ import os
 import plotly.express as px
 
 # 1. Konfigurasi Halaman Browser
-st.set_page_config(page_title="Misi Tata Surya Dian Wacana", page_icon="🚀", layout="wide")
+st.set_page_config(page_title="Absensi Ceria Dian Wacana", page_icon="🏫", layout="wide")
 
-# 2. SUNTIKAN CSS UNTUK STYLE GALAXY / SPACE
+# 2. SUNTIKAN CSS UNTUK STYLE COLORFUL & PLAYFUL (KINDERGARTEN)
 st.markdown("""
     <style>
+    /* Latar belakang halaman bergradasi warna pastel ceria */
     .stApp {
-        background-color: #0B0C10;
-        background-image: radial-gradient(circle at center, #1F2833 0%, #0B0C10 100%);
-        color: #C5C6C7;
+        background-color: #F8F9FA;
+        background-image: linear-gradient(135deg, #FFD1BA 0%, #FFF2CC 50%, #C1E1C1 100%);
+        color: #2D3142;
     }
+    
+    /* Header Utama */
     .header-kontainer {
         text-align: center;
-        background-color: rgba(31, 40, 51, 0.8);
-        padding: 25px;
-        border-radius: 16px;
-        border: 1px solid #45A29E;
+        background-color: #FFFFFF;
+        padding: 30px;
+        border-radius: 25px;
+        border: 4px dashed #FF9AA2;
         margin-bottom: 30px;
-        box-shadow: 0 4px 15px rgba(69, 162, 158, 0.3);
+        box-shadow: 0 8px 16px rgba(255, 154, 162, 0.3);
     }
     .judul-utama {
-        font-family: 'Courier New', Courier, monospace;
-        color: #66FCF1;
-        font-size: 34px;
-        font-weight: 800;
+        font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+        color: #FF6B6B;
+        font-size: 38px;
+        font-weight: 900;
         margin: 0;
-        text-shadow: 0 0 10px rgba(102, 252, 241, 0.5);
+        text-shadow: 2px 2px 0px #FFE6E6;
     }
     .sub-judul {
-        color: #F8E9A1;
-        font-size: 14px;
-        font-weight: 700;
-        margin-top: 5px;
-        letter-spacing: 2px;
+        color: #4ECDC4;
+        font-size: 16px;
+        font-weight: bold;
+        margin-top: 10px;
+        letter-spacing: 1px;
     }
     .guru-mapel {
-        color: #A0B2C6;
-        font-size: 15px;
-        margin-top: 4px;
+        color: #FFA69E;
+        font-size: 16px;
+        font-weight: bold;
+        margin-top: 5px;
+        background-color: #FFF5F5;
+        display: inline-block;
+        padding: 5px 15px;
+        border-radius: 20px;
     }
+    
+    /* Kontainer / Bingkai */
     .stElementContainer div[data-testid="stVerticalBlockBorderContainer"] {
-        background-color: rgba(31, 40, 51, 0.6) !important;
-        border: 1px solid #45A29E !important;
-        border-radius: 16px !important;
+        background-color: rgba(255, 255, 255, 0.9) !important;
+        border: 3px solid #84DCC6 !important;
+        border-radius: 25px !important;
         padding: 25px !important;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+        box-shadow: 0 8px 15px rgba(132, 220, 198, 0.2) !important;
     }
+    
+    /* Bingkai Game / Soal */
     .kotak-soal {
         text-align: center; 
-        font-size: 60px; 
-        background-color: rgba(11, 12, 16, 0.8); 
-        border: 1px solid #66FCF1; 
-        border-radius: 12px; 
-        padding: 15px; 
-        margin-bottom: 15px;
-        color: #FFFFFF;
+        font-size: 70px; 
+        background-color: #FFF3E0; 
+        border: 3px solid #FFCC80; 
+        border-radius: 20px; 
+        padding: 20px; 
+        margin-bottom: 20px;
+        box-shadow: inset 0 0 10px rgba(255, 204, 128, 0.5);
     }
+    
+    /* Tombol-tombol Ceria */
     .stButton>button {
-        border-radius: 8px !important;
-        font-weight: 600 !important;
-        border: 1px solid #45A29E !important;
-        background-color: rgba(11, 12, 16, 0.8) !important;
-        color: #66FCF1 !important;
+        border-radius: 30px !important;
+        font-weight: 800 !important;
+        font-size: 16px !important;
+        border: none !important;
+        background-color: #A0E8AF !important;
+        color: #2D3142 !important;
         width: 100%;
-        transition: all 0.3s ease-in-out;
+        padding: 10px !important;
+        transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        box-shadow: 0 4px 6px rgba(160, 232, 175, 0.4);
     }
     .stButton>button:hover {
-        border-color: #F8E9A1 !important;
-        color: #0B0C10 !important;
-        background-color: #F8E9A1 !important;
-        box-shadow: 0 0 10px rgba(248, 233, 161, 0.6);
+        transform: translateY(-3px) scale(1.02);
+        background-color: #FF9AA2 !important;
+        color: white !important;
+        box-shadow: 0 6px 12px rgba(255, 154, 162, 0.5);
     }
+    
+    /* Kartu Metrik Laporan */
     .metric-card {
-        background-color: rgba(11, 12, 16, 0.8);
-        border-radius: 12px;
-        padding: 15px;
+        background-color: #FFFFFF;
+        border-radius: 20px;
+        padding: 20px;
         text-align: center;
-        border: 1px solid #45A29E;
-        color: #E0E0E0;
+        border: 2px solid #A0C4FF;
+        box-shadow: 0 4px 8px rgba(160, 196, 255, 0.3);
+        transition: transform 0.2s;
     }
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    /* Teks dan Label */
     .stSelectbox label, .stRadio label, h2, h3, h4 {
-        color: #66FCF1 !important;
-    }
-    p, li {
-        color: #C5C6C7;
+        color: #6D597A !important;
+        font-family: 'Comic Sans MS', sans-serif;
+        font-weight: bold;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -111,7 +135,7 @@ def buat_database_baru():
             rows.append({
                 "Kelas": kelas,
                 "Nama Siswa": nama,
-                "Status": "❌ Belum Mendarat",
+                "Status": "❌ Belum Hadir",
                 "Tanggal Presensi": "-",
                 "Jam Presensi": "-",
                 "Bintang": 0,
@@ -131,7 +155,7 @@ def muat_data():
         if "Jam Presensi" not in df.columns:
             df["Jam Presensi"] = "-"
         if "Total Hadir Sesi" not in df.columns:
-            df["Total Hadir Sesi"] = df["Status"].apply(lambda x: 1 if "🚀" in str(x) else 0)
+            df["Total Hadir Sesi"] = df["Status"].apply(lambda x: 1 if "✅" in str(x) else 0)
         return df
     else:
         return buat_database_baru()
@@ -143,7 +167,7 @@ if 'df_master' not in st.session_state:
     st.session_state.df_master = muat_data()
 
 if 'nama_aktif' not in st.session_state:
-    st.session_state.nama_aktif = "-- Pilih Astronot --"
+    st.session_state.nama_aktif = "-- Pilih Nama --"
 
 if 'game_aktif' not in st.session_state:
     st.session_state.game_aktif = None
@@ -151,54 +175,97 @@ if 'game_aktif' not in st.session_state:
 if 'umpan_balik_game' not in st.session_state:
     st.session_state.umpan_balik_game = None
 
-# --- GENERATOR SOAL OTOMATIS TEMA TATA SURYA ---
+
+# =========================================================================
+# --- GENERATOR SOAL OTOMATIS BERVARIASI TEMA KINDERGARTEN ---
+# =========================================================================
 def get_game(kategori):
-    tipe_game = random.choice(["hitung", "pola", "logika", "arah"])
     if kategori == "KB":
-        if tipe_game == "hitung":
-            emoji = random.choice(["🌎", "🪐", "🚀", "👽", "⭐"])
-            jumlah = random.randint(1, 4)
-            return (" ".join([emoji] * jumlah), f"Ada berapa jumlah benda angkasa {emoji} di atas?", [str(jumlah), str(jumlah+1), "5"], str(jumlah))
-        else:
+        # KB: Fokus pada pengenalan dasar (Warna, Hewan, Benda, Hitung 1-3)
+        tipe_game = random.choice(["hitung_dasar", "warna", "hewan", "benda"])
+        if tipe_game == "hitung_dasar":
+            emoji = random.choice(["🍓", "🧸", "🎈", "🐥", "🚗"])
+            jumlah = random.randint(1, 3)
+            return (" ".join([emoji] * jumlah), f"Ada berapa jumlah {emoji} di atas?", [str(jumlah), str(jumlah+1), "4"], str(jumlah))
+        elif tipe_game == "warna":
             return random.choice([
-                ("⭐", "Warna apakah bintang di atas?", ["Kuning", "Biru", "Hijau"], "Kuning"),
-                ("👽", "Makhluk apakah gambar di atas?", ["Alien", "Kucing", "Astronot"], "Alien"),
-                ("🔴", "Bentuk apakah planet berwarna merah di atas?", ["Kotak", "Lingkaran", "Segitiga"], "Lingkaran")
+                ("🍌", "Buah Pisang di atas warnanya apa?", ["Kuning", "Biru", "Merah"], "Kuning"),
+                ("🍏", "Buah Apel ini warnanya apa?", ["Hijau", "Hitam", "Ungu"], "Hijau"),
+                ("☁️", "Awan di langit warnanya apa?", ["Putih", "Coklat", "Merah"], "Putih")
             ])
+        elif tipe_game == "hewan":
+            return random.choice([
+                ("🐄", "Hewan apa yang suaranya MOOO...?", ["Sapi 🐄", "Bebek 🦆", "Kucing 🐈"], "Sapi 🐄"),
+                ("🐕", "Hewan apa yang suaranya GUK GUK...?", ["Anjing 🐕", "Ayam 🐓", "Kuda 🐎"], "Anjing 🐕"),
+                ("🐸", "Hewan apa yang suka melompat dan berbunyi TEOBLUNG?", ["Katak 🐸", "Burung 🐦", "Ikan 🐟"], "Katak 🐸")
+            ])
+        else: # benda
+            return random.choice([
+                ("☂️", "Kapan kita memakai Payung?", ["Saat Hujan 🌧️", "Saat Tidur 🛏️", "Saat Makan 🍽️"], "Saat Hujan 🌧️"),
+                ("🦷🪥", "Alat ini dipakai untuk membersihkan apa?", ["Gigi", "Rambut", "Sepatu"], "Gigi")
+            ])
+            
     elif kategori == "TK A":
+        # TK A: Penambahan sederhana, pengenalan huruf/awalan, logika ukuran, pola dasar
+        tipe_game = random.choice(["hitung", "huruf", "ukuran", "pola"])
         if tipe_game == "hitung":
             a, b = random.randint(1, 3), random.randint(1, 2)
-            return (f"{a} 🚀 + {b} 🚀 = ?", "Berapa total roket yang meluncur?", [str(a+b), str(a+b+1), str(a+b-1)], str(a+b))
-        elif tipe_game == "pola":
-            e1, e2 = random.sample(["🌎", "🪐", "☄️", "☀️"], 2)
-            return (f"{e1} {e2} {e1} {e2} ?", "Benda angkasa apa setelahnya sesuai pola orbit?", [e1, e2, "❓"], e1)
-        else:
+            buah = random.choice(["🍎", "🍊", "🧁"])
+            return (f"{a} {buah} + {b} {buah}", f"Berapa jumlah semua {buah} di atas?", [str(a+b), str(a+b+1), str(a+b-1)], str(a+b))
+        elif tipe_game == "huruf":
             return random.choice([
-                ("☀️ ... 🌕", "Siapa yang ukurannya LEBIH BESAR di angkasa?", ["Matahari ☀️", "Bulan 🌕"], "Matahari ☀️"),
-                ("M, A, R, _", "Huruf apa yang hilang pada kata MARS?", ["S", "T", "B"], "S")
+                ("B - U - K - U", "Kata 'BUKU' huruf awalnya apa?", ["B", "K", "U"], "B"),
+                ("A - P - E - L", "Kata 'APEL' huruf awalnya apa?", ["P", "A", "L"], "A"),
+                ("M - A - T - A", "Huruf apa yang hilang? M - _ - T - A", ["A", "O", "I"], "A")
             ])
-    else: # TK B
-        if tipe_game == "hitung":
+        elif tipe_game == "ukuran":
+            return random.choice([
+                ("🐘 ... 🐁", "Hewan manakah yang badannya PALING BESAR?", ["Gajah 🐘", "Tikus 🐁", "Sama Besar"], "Gajah 🐘"),
+                ("🚌 ... 🚗", "Kendaraan manakah yang PALING PANJANG?", ["Bus 🚌", "Mobil 🚗", "Sama Panjang"], "Bus 🚌"),
+                ("🍉 ... 🍓", "Buah manakah yang LEBIH BERAT?", ["Semangka 🍉", "Stroberi 🍓", "Sama Berat"], "Semangka 🍉")
+            ])
+        else: # pola
+            e1, e2 = random.sample(["🔴", "🔵", "🟡", "🟢"], 2)
+            return (f"{e1} {e2} {e1} {e2} ... ?", "Warna apa yang muncul setelah ini?", [e1, e2, "⚫"], e1)
+            
+    else: 
+        # TK B: Operasi hitung (sampai 10), arah/coding dasar, membaca sederhana, logika sifat
+        tipe_game = random.choice(["hitung_tkb", "arah", "membaca", "logika_sifat"])
+        if tipe_game == "hitung_tkb":
             mode = random.choice(["+", "-"])
-            a, b = (random.randint(3, 6), random.randint(1, 3)) if mode == "+" else (random.randint(6, 9), random.randint(1, 4))
+            if mode == "+":
+                a, b = random.randint(3, 5), random.randint(2, 4)
+                soal = f"{a} 🍬 + {b} 🍬 = ?"
+            else:
+                a, b = random.randint(6, 9), random.randint(1, 4)
+                soal = f"{a} 🍪 dimakan {b} 🍪, sisa = ?"
             kunci = a + b if mode == "+" else a - b
-            return (f"{a} {mode} {b} = ?", "Berapa hasil perhitungan rute roket di atas?", [str(kunci), str(kunci+1), str(kunci-1)], str(kunci))
+            # Pastikan kunci tidak negatif
+            return (soal, "Yuk berhitung! Berapa jawabannya?", [str(kunci), str(kunci+1), str(kunci-1)], str(kunci))
         elif tipe_game == "arah":
-            awal = random.randint(1, 3)
-            langkah = random.randint(1, 2)
-            return (f"Sektor {awal} ➔ " + ("🚀 " * langkah), f"Jika roket di sektor {awal} maju {langkah} sektor, di sektor nomor berapa roket sekarang?", [str(awal+langkah), str(awal+langkah+1), "0"], str(awal+langkah))
-        else:
+            awal = random.randint(1, 2)
+            langkah = random.randint(2, 3)
+            return (f"Rumah {awal} ➔ " + ("🐇 " * langkah), f"Kelinci mulai di Rumah {awal} lalu melompat {langkah} kali. Di rumah nomor berapakah kelinci sekarang?", [str(awal+langkah), str(awal+langkah+1), "Rumah 10"], str(awal+langkah))
+        elif tipe_game == "membaca":
             return random.choice([
-                ("☀️", "Apa LAWAN KATA dari keadaan TERANG di siang hari?", ["GELAP", "PANAS", "DINGIN"], "GELAP"),
-                ("🔴 🟡 🔵 🔴 🟡 _", "Lanjutkan pola warna planet berikut!", ["Merah", "Kuning", "Biru"], "Biru")
+                ("B - O - L - A", "Jika dibaca bunyinya menjadi apa?", ["BOLA", "BALO", "BULA"], "BOLA"),
+                ("S - A - P - U", "Kata ini digunakan untuk membersihkan lantai, dibaca?", ["SAPI", "SAPU", "SOPU"], "SAPU"),
+                ("M - E - J - A", "Tempat kita menulis di sekolah, dibaca?", ["MAJU", "MEJA", "MATA"], "MEJA")
             ])
+        else: # logika sifat / lawan kata
+            return random.choice([
+                ("🔥", "Lawan kata dari benda yang PANAS adalah?", ["DINGIN 🧊", "TERANG ☀️", "MANIS 🍬"], "DINGIN 🧊"),
+                ("🍋 vs 🍬", "Makanan manakah yang rasanya MANIS?", ["Permen 🍬", "Jeruk Nipis 🍋", "Garam 🧂"], "Permen 🍬"),
+                ("☀️ vs 🌙", "Matahari muncul pada saat hari sedang?", ["Malam", "Siang", "Hujan"], "Siang")
+            ])
+
 
 # --- TAMPILAN HEADER ---
 st.markdown("""
     <div class="header-kontainer">
-        <div class="judul-utama">🌌 MISI TATA SURYA: ABSENSI & GAME CODING</div>
-        <div class="sub-judul">STASIUN LUAR ANGKASA KB-TK DIAN WACANA</div>
-        <div class="guru-mapel">👩‍🚀 Komandan Misi: Ms. Siska</div>
+        <div class="judul-utama">🌈 ABSENSI CERIA & BERMAIN 🎨</div>
+        <div class="sub-judul">KB-TK KRISTEN DIAN WACANA 🧸</div>
+        <div class="guru-mapel">👩‍🏫 Guru Kelas: Ms. Siska</div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -208,30 +275,30 @@ kolom_absen, kolom_game = st.columns(2, gap="large")
 # FRAME 1: PANEL ABSENSI (KIRI)
 with kolom_absen:
     with st.container(border=True):
-        st.subheader("🛰️ Radar Deteksi Astronot")
+        st.subheader("🎒 Buku Absen Kelas")
         
         if 'kelas_lama' not in st.session_state:
             st.session_state.kelas_lama = "KB"
         
-        kelas = st.selectbox("1. Pilih Skuadron (Kelas):", ["KB", "TK A", "TK B"])
+        kelas = st.selectbox("1. Pilih Kelasmu:", ["KB", "TK A", "TK B"])
         
         if kelas != st.session_state.kelas_lama:
-            st.session_state.nama_aktif = "-- Pilih Astronot --"
+            st.session_state.nama_aktif = "-- Pilih Nama --"
             st.session_state.kelas_lama = kelas
         
         df_kelas = st.session_state.df_master[st.session_state.df_master["Kelas"] == kelas]
         daftar_nama_asli = sorted(df_kelas["Nama Siswa"].tolist())
         
-        opsi_selectbox = ["-- Pilih Astronot --"]
-        mapping_nama = {"-- Pilih Astronot --": "-- Pilih Astronot --"}
+        opsi_selectbox = ["-- Pilih Nama --"]
+        mapping_nama = {"-- Pilih Nama --": "-- Pilih Nama --"}
         indeks_default = 0
         
         for i, nama in enumerate(daftar_nama_asli):
             status_siswa = df_kelas[df_kelas["Nama Siswa"] == nama]["Status"].values[0]
-            if "🚀" in str(status_siswa):
-                label_tampilan = f"🚀 {nama} (Sudah Mendarat)"
+            if "✅" in str(status_siswa):
+                label_tampilan = f"✅ {nama} (Sudah Datang)"
             else:
-                label_tampilan = f"🧑‍🚀 {nama}"
+                label_tampilan = f"👧👦 {nama}"
             
             opsi_selectbox.append(label_tampilan)
             mapping_nama[label_tampilan] = nama
@@ -239,31 +306,31 @@ with kolom_absen:
             if nama == st.session_state.nama_aktif:
                 indeks_default = i + 1
         
-        pilihan_tampilan = st.selectbox("2. Panggil Namamu ke Stasiun:", opsi_selectbox, index=indeks_default)
+        pilihan_tampilan = st.selectbox("2. Cari & Klik Namamu:", opsi_selectbox, index=indeks_default)
         nama_terpilled = mapping_nama[pilihan_tampilan]
         st.session_state.nama_aktif = nama_terpilled
         
         st.write("---")
         
-        if nama_terpilled != "-- Pilih Astronot --":
+        if nama_terpilled != "-- Pilih Nama --":
             idx_anak = st.session_state.df_master[(st.session_state.df_master["Kelas"] == kelas) & (st.session_state.df_master["Nama Siswa"] == nama_terpilled)].index[0]
             row_anak = st.session_state.df_master.loc[idx_anak]
             
-            hadir = "🚀" in str(row_anak["Status"])
+            hadir = "✅" in str(row_anak["Status"])
             bintang = row_anak["Bintang"]
             tgl_absen = row_anak["Tanggal Presensi"]
             jam_absen = row_anak["Jam Presensi"]
             
             if hadir:
-                st.markdown("<h1 style='text-align: center; margin:0;'>👨‍🚀</h1>", unsafe_allow_html=True)
-                st.success(f"Selamat Mendarat, Astronot {nama_terpilled}! Deteksi masuk tanggal {tgl_absen} jam {jam_absen}. Bintang galaksimu: {bintang} ⭐")
+                st.markdown("<h1 style='text-align: center; margin:0;'>🥰</h1>", unsafe_allow_html=True)
+                st.success(f"Pintarnya! {nama_terpilled} masuk tanggal {tgl_absen} jam {jam_absen}. Kamu punya {bintang} ⭐")
             else:
-                st.markdown("<h1 style='text-align: center; margin:0;'>🛸</h1>", unsafe_allow_html=True)
-                st.warning(f"Halo Astronot {nama_terpilled}, kapalmu belum terdeteksi masuk stasiun.")
-                if st.button("🚀 SAYA SIAP MELUNCUR HARI INI!", type="primary"):
+                st.markdown("<h1 style='text-align: center; margin:0;'>😊</h1>", unsafe_allow_html=True)
+                st.warning(f"Halo {nama_terpilled} sayang, yuk klik tombol hadir dulu di bawah ini!")
+                if st.button("🙋‍♀️🙋‍♂️ SAYA HADIR MS. SISKA!", type="primary"):
                     waktu_wib = datetime.utcnow() + timedelta(hours=7)
                     
-                    st.session_state.df_master.loc[idx_anak, "Status"] = "🚀 Sudah Mendarat"
+                    st.session_state.df_master.loc[idx_anak, "Status"] = "✅ Sudah Datang"
                     st.session_state.df_master.loc[idx_anak, "Tanggal Presensi"] = waktu_wib.strftime("%d-%m-%Y")
                     st.session_state.df_master.loc[idx_anak, "Jam Presensi"] = waktu_wib.strftime("%H:%M:%S")
                     st.session_state.df_master.loc[idx_anak, "Total Hadir Sesi"] += 1
@@ -274,49 +341,52 @@ with kolom_absen:
                     st.session_state.umpan_balik_game = None
                     st.rerun()
         else:
-            st.markdown("<h1 style='text-align: center; margin:0;'>🌍</h1>", unsafe_allow_html=True)
-            st.info("Sistem navigasi siap. Silakan identifikasi dirimu terlebih dahulu di atas.")
+            st.markdown("<h1 style='text-align: center; margin:0;'>🎈</h1>", unsafe_allow_html=True)
+            st.info("Pilih kelas dan namamu di atas dulu ya, Nak!")
 
 # FRAME 2: PANEL GAME (KANAN)
 with kolom_game:
     with st.container(border=True):
-        st.subheader("🎮 Simulator Pelatihan Antariksa")
+        st.subheader("🧩 Waktunya Bermain!")
         
         status_absen_siswa = ""
-        if nama_terpilled != "-- Pilih Astronot --":
+        if nama_terpilled != "-- Pilih Nama --":
             status_absen_siswa = st.session_state.df_master[(st.session_state.df_master["Kelas"] == kelas) & (st.session_state.df_master["Nama Siswa"] == nama_terpilled)]["Status"].values[0]
         
-        if nama_terpilled == "-- Pilih Astronot --" or not ("🚀" in str(status_absen_siswa)):
+        if nama_terpilled == "-- Pilih Nama --" or not ("✅" in str(status_absen_siswa)):
             st.markdown("<h1 style='text-align: center; margin: 30px 0;'>🔒</h1>", unsafe_allow_html=True)
-            st.info("Simulator Terkunci. Silakan **Siap Meluncur** di radar sebelah kiri untuk membuka kode akses!")
+            st.info("Game masih terkunci! Absen hadir dulu ya di sebelah kiri untuk mulai bermain. 🎨")
         else:
             idx_anak = st.session_state.df_master[(st.session_state.df_master["Kelas"] == kelas) & (st.session_state.df_master["Nama Siswa"] == nama_terpilled)].index[0]
             
             if st.session_state.umpan_balik_game == "benar":
                 st.balloons()
-                st.markdown("<h3 style='text-align: center; color: #66FCF1;'>🌟 KODE BENAR! +1 BINTANG GALAKSI</h3>", unsafe_allow_html=True)
-                if st.button("☄️ LANJUTKAN MISI BERIKUTNYA", type="primary"):
+                st.markdown("<h3 style='text-align: center; color: #4ECDC4;'>🌟 YAY BENAR! DAPAT +1 BINTANG!</h3>", unsafe_allow_html=True)
+                if st.button("🚀 MAIN LAGI YUK", type="primary"):
                     st.session_state.game_aktif = get_game(kelas)
                     st.session_state.umpan_balik_game = None
                     st.rerun()
             else:
                 if st.session_state.game_aktif:
-                    if st.button("🔄 GANTI KOORDINAT SOAL"):
+                    if st.button("🔄 GANTI PERTANYAAN"):
                         st.session_state.game_aktif = get_game(kelas)
                         st.session_state.umpan_balik_game = None
                         st.rerun()
                 
                 if st.session_state.umpan_balik_game == "salah":
-                    st.error("❌ Hitungan kurang tepat, roket meleset! Ayo coba lagi, Astronot!")
+                    st.error("❌ Wah, masih kurang tepat. Tidak apa-apa, ayo coba lagi! 💪")
 
                 if st.session_state.game_aktif:
                     visual, pertanyaan, opsi, jawaban_benar = st.session_state.game_aktif
                     
                     st.markdown(f'<div class="kotak-soal">{visual}</div>', unsafe_allow_html=True)
-                    st.markdown(f'<p style="text-align:center; font-weight:600; font-size:18px;">{pertanyaan}</p>', unsafe_allow_html=True)
+                    st.markdown(f'<p style="text-align:center; font-weight:700; font-size:20px; color:#6D597A;">{pertanyaan}</p>', unsafe_allow_html=True)
                     
-                    kol_opsi = st.columns(len(opsi))
-                    for i, alternatif in enumerate(opsi):
+                    # Randomize urutan opsi agar tidak selalu di posisi yang sama
+                    opsi_acak = random.sample(opsi, len(opsi)) if 'opsi_acak' not in st.session_state or st.session_state.umpan_balik_game == "salah" else opsi
+                    
+                    kol_opsi = st.columns(len(opsi_acak))
+                    for i, alternatif in enumerate(opsi_acak):
                         with kol_opsi[i]:
                             if st.button(alternatif, key=f"btn_{alternatif}_{i}"):
                                 if alternatif == jawaban_benar:
@@ -328,7 +398,7 @@ with kolom_game:
                                     st.session_state.umpan_balik_game = "salah"
                                     st.rerun()
                 else:
-                    if st.button("🎲 MULAI SIMULASI", type="primary"):
+                    if st.button("🎲 MULAI BERMAIN", type="primary"):
                         st.session_state.game_aktif = get_game(kelas)
                         st.session_state.umpan_balik_game = None
                         st.rerun()
@@ -338,30 +408,30 @@ st.write("<br><br>", unsafe_allow_html=True)
 # ==================== COMPONENT UTAMA: LOG & GRAFIK LAPORAN AKHIR ====================
 st.write("---")
 with st.container(border=True):
-    st.markdown("<h2 style='margin-top:0;'>📊 Pusat Komando: Laporan Misi Kelas</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='margin-top:0;'>📊 Catatan Ms. Siska (Laporan Kelas)</h2>", unsafe_allow_html=True)
     
     total_siswa = len(st.session_state.df_master)
-    total_hadir = len(st.session_state.df_master[st.session_state.df_master["Status"].str.contains("🚀", na=False)])
+    total_hadir = len(st.session_state.df_master[st.session_state.df_master["Status"].str.contains("✅", na=False)])
     total_belum = total_siswa - total_hadir
     
     col_m1, col_m2, col_m3 = st.columns(3)
     with col_m1:
-        st.markdown(f"<div class='metric-card'>🧑‍🚀 <b>Kapasitas Kru Skuadron</b><br><span style='font-size:24px; font-weight:700; color:#66FCF1;'>{total_siswa} Kru</span></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='metric-card'>🧒👧 <b>Jumlah Semua Anak</b><br><span style='font-size:26px; font-weight:900; color:#6D597A;'>{total_siswa} Anak</span></div>", unsafe_allow_html=True)
     with col_m2:
-        st.markdown(f"<div class='metric-card'>🛸 <b>Roket Mendarat Hari Ini</b><br><span style='font-size:24px; font-weight:700; color:#45A29E;'>{total_hadir} Kapal</span></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='metric-card'>🏫 <b>Hadir Hari Ini</b><br><span style='font-size:26px; font-weight:900; color:#4ECDC4;'>{total_hadir} Anak</span></div>", unsafe_allow_html=True)
     with col_m3:
         persentase = round((total_hadir / total_siswa) * 100) if total_siswa > 0 else 0
-        st.markdown(f"<div class='metric-card'>📈 <b>Keberhasilan Misi Kehadiran</b><br><span style='font-size:24px; font-weight:700; color:#F8E9A1;'>{persentase}%</span></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='metric-card'>🌟 <b>Persentase Hadir</b><br><span style='font-size:26px; font-weight:900; color:#FF9AA2;'>{persentase}%</span></div>", unsafe_allow_html=True)
 
     st.write("<br>", unsafe_allow_html=True)
     
-    pilih_log_kelas = st.radio("Pilih frekuensi sinyal skuadron:", ["Semua Skuadron", "KB", "TK A", "TK B"], horizontal=True, key="filter_laporan")
-    df_filtered = st.session_state.df_master if pilih_log_kelas == "Semua Skuadron" else st.session_state.df_master[st.session_state.df_master["Kelas"] == pilih_log_kelas]
+    pilih_log_kelas = st.radio("Pilih kelas yang mau dilihat:", ["Semua Kelas", "KB", "TK A", "TK B"], horizontal=True, key="filter_laporan")
+    df_filtered = st.session_state.df_master if pilih_log_kelas == "Semua Kelas" else st.session_state.df_master[st.session_state.df_master["Kelas"] == pilih_log_kelas]
 
     # --- 1. SEKSI GRAFIK LINGKARAN (PIE CHART) ---
-    st.markdown("### 🔭 Radar Proporsi Kehadiran Misi")
+    st.markdown("### 🍩 Grafik Kehadiran")
     
-    hadir_filter = len(df_filtered[df_filtered["Status"].str.contains("🚀", na=False)])
+    hadir_filter = len(df_filtered[df_filtered["Status"].str.contains("✅", na=False)])
     belum_filter = len(df_filtered) - hadir_filter
     
     if len(df_filtered) > 0:
@@ -369,7 +439,7 @@ with st.container(border=True):
         
         with kol_grafik:
             df_pie = pd.DataFrame({
-                "Status Presensi": ["Sudah Mendarat (🚀)", "Belum Terdeteksi (❌)"],
+                "Status Presensi": ["Sudah Datang (✅)", "Belum Datang (❌)"],
                 "Jumlah Anak": [hadir_filter, belum_filter]
             })
             
@@ -378,15 +448,14 @@ with st.container(border=True):
                 values="Jumlah Anak", 
                 names="Status Presensi",
                 color="Status Presensi",
-                color_discrete_map={"Sudah Mendarat (🚀)": "#45A29E", "Belum Terdeteksi (❌)": "#E27D60"},
+                color_discrete_map={"Sudah Datang (✅)": "#A0E8AF", "Belum Datang (❌)": "#FF9AA2"}, # Pastel Green & Pink
                 hole=0.4
             )
             
-            # Ubah layout agar cocok dengan dark mode
             fig.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
-                font=dict(color="#C5C6C7"),
+                font=dict(family="Comic Sans MS", color="#2D3142"),
                 margin=dict(t=10, b=10, l=10, r=10),
                 legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.05),
                 showlegend=True
@@ -394,28 +463,28 @@ with st.container(border=True):
             st.plotly_chart(fig, use_container_width=True)
             
         with kol_info_detail:
-            st.markdown("#### 📡 Detail Komunikasi Skuadron")
+            st.markdown("#### 📝 Detail Kelas")
             persen_hadir = round((hadir_filter / len(df_filtered)) * 100) if len(df_filtered) > 0 else 0
             persen_belum = 100 - persen_hadir
             
             st.markdown(f"""
-            * 🟢 **Terkoneksi ke Stasiun:** `{hadir_filter} Astronot` ({persen_hadir}%)
-            * 🔴 **Belum Memasuki Orbit:** `{belum_filter} Astronot` ({persen_belum}%)
-            * 🏢 **Kapasitas Skuadron Saat Ini:** `{len(df_filtered)} Astronot`
+            * 🟢 **Sudah di Sekolah:** `{hadir_filter} Anak` ({persen_hadir}%)
+            * 🔴 **Belum di Sekolah:** `{belum_filter} Anak` ({persen_belum}%)
+            * 🏫 **Total Murid di Kelas:** `{len(df_filtered)} Anak`
             
             ---
-            💡 *Pesan Komando: Pantauan radar interaktif ini mempermudah Komandan Ms. Siska mengecek kru sebelum lepas landas menuju pelajaran.*
+            💡 *Pesan Ms. Siska: Grafik donat ini membantuku melihat seberapa banyak anak hebat yang sudah datang hari ini sebelum mulai bernyanyi!*
             """)
     else:
-        st.info("ℹ️ Tidak ada sinyal data yang tersedia untuk skuadron ini.")
+        st.info("ℹ️ Tidak ada data murid di kelas ini.")
 
     # --- 2. SEKSI TABEL LOG AUDIT ---
     st.write("---")
-    st.markdown("### 📋 Log Penerbangan (Riwayat Presensi)")
+    st.markdown("### 📋 Buku Nilai Bintang Anak Hebat")
     
     df_tampilan_tabel = df_filtered.copy()
     df_tampilan_tabel["Bintang"] = df_tampilan_tabel["Bintang"].apply(lambda x: f"{x} ⭐")
-    df_tampilan_tabel["Total Hadir Sesi"] = df_tampilan_tabel["Total Hadir Sesi"].apply(lambda x: f"{x} Misi")
+    df_tampilan_tabel["Total Hadir Sesi"] = df_tampilan_tabel["Total Hadir Sesi"].apply(lambda x: f"{x} Hari")
     
     st.dataframe(
         df_tampilan_tabel[["Kelas", "Nama Siswa", "Status", "Tanggal Presensi", "Jam Presensi", "Bintang", "Total Hadir Sesi"]], 
@@ -425,32 +494,32 @@ with st.container(border=True):
 
     # --- FITUR ADMIN GURU (DENGAN TOMBOL RESET DATABASE TOTAL) ---
     st.write("---")
-    with st.expander("⚙️ Konsol Kontrol Pusat (Ms. Siska)"):
-        st.markdown("### 🔄 Sinkronisasi Orbit Sesi Baru")
+    with st.expander("⚙️ Laci Rahasia Ms. Siska (Pengaturan)"):
+        st.markdown("### 🌅 Memulai Hari Baru")
         
-        if st.button("🔄 Mulai Sesi Hari Baru (Reset Status Harian Saja)"):
-            st.session_state.df_master["Status"] = "❌ Belum Mendarat"
+        if st.button("🌅 Buka Kelas Hari Baru (Reset Status Kehadiran Saja)"):
+            st.session_state.df_master["Status"] = "❌ Belum Hadir"
             st.session_state.df_master["Tanggal Presensi"] = "-"
             st.session_state.df_master["Jam Presensi"] = "-"
             simpan_data(st.session_state.df_master)
-            st.success("Sistem harian di-reset! Siklus rotasi bumi baru dimulai, data bintang kru tetap aman.")
+            st.success("Selamat Pagi! Status absen sudah kosong untuk hari ini. Bintang anak-anak tetap tersimpan aman. 🥰")
             st.rerun()
             
         st.write("<br>", unsafe_allow_html=True)
         st.write("---")
         
-        st.markdown("### ⚠️ Area Lubang Hitam (Blackhole / Reset Pabrik)")
-        st.error("Perhatian: Tombol di bawah ini akan menghisap semua riwayat secara PERMANEN ke dalam Blackhole. Bintang galaksi dan total misi seluruh kru akan hangus menjadi 0.")
+        st.markdown("### 🚨 Hapus Semua Data (Kembali ke Nol)")
+        st.error("Perhatian: Tombol di bawah ini akan MENGHAPUS SEMUA BINTANG dan HARI HADIR anak-anak menjadi 0 (Nol).")
         
-        konfirmasi_reset = st.checkbox("Saya mengotorisasi penghapusan seluruh data penerbangan (Bintang & Presensi kembali ke 0)")
+        konfirmasi_reset = st.checkbox("Saya yakin ingin menghapus semua bintang dan kembali ke buku baru (Tahun Ajaran Baru)")
         
-        if st.button("🚨 FORMAT TOTAL SISTEM DATABASE", type="secondary"):
+        if st.button("🗑️ HAPUS SEMUA DATA & BINTANG", type="secondary"):
             if konfirmasi_reset:
                 st.session_state.df_master = buat_database_baru()
-                st.session_state.nama_aktif = "-- Pilih Astronot --"
+                st.session_state.nama_aktif = "-- Pilih Nama --"
                 st.session_state.game_aktif = None
                 st.session_state.umpan_balik_game = None
-                st.success("💥 Ledakan Supernova! Seluruh database dan perolehan bintang telah diformat ulang.")
+                st.success("Buku rapor sudah dibersihkan! Mulai mengumpulkan bintang dari nol lagi ya! ✨")
                 st.rerun()
             else:
-                st.warning("Silakan centang otorisasi di atas untuk membuka kunci protokol reset total!")
+                st.warning("Centang dulu kotak persetujuan di atas ya Ms. Siska!")
